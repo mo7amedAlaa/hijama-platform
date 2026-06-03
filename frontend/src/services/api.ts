@@ -78,4 +78,5 @@ export const bookingService = {
 // services/api.ts
 export const consultationService = {
   my: () => api.get("/consultations"),
+  create: (data: any) => api.post("/consultations", data),
 };
