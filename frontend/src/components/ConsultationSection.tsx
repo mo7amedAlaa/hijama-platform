@@ -1,76 +1,123 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { consultationService } from "../services/api";
 
 const options = [
-  { title: "مكالمة صوتية", desc: "تحدث مباشرة مع متخصص", icon: "📞", action: "voice" },
-  { title: "محادثة نصية", desc: "عبر واتساب أو الرسائل", icon: "💬", action: "chat" },
-  { title: "مكالمة مرئية", desc: "استشارة بالفيديو", icon: "🎥", action: "video" },
+  {
+    title: "مكالمة صوتية",
+    desc: "تحدث مباشرة مع متخصص",
+    icon: "📞",
+    action: "voice",
+  },
+  {
+    title: "محادثة نصية",
+    desc: "عبر واتساب أو الرسائل",
+    icon: "💬",
+    action: "chat",
+  },
+  {
+    title: "مكالمة مرئية",
+    desc: "استشارة بالفيديو",
+    icon: "🎥",
+    action: "video",
+  },
 ];
+
+interface Consultation {
+  id: number;
+  type: string;
+  status: string;
+  message: string;
+}
+
+interface ResultState {
+  type: "success" | "error";
+  message: string;
+}
 
 const ConsultationSection = () => {
   const navigate = useNavigate();
 
-  const [selectedType, setSelectedType] = useState(null);
-  const [form, setForm] = useState({ name: "", phone: "", message: "" });
+  const [selectedType, setSelectedType] = useState<string | null>(null);
+
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    message: "",
+  });
 
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
+
+  const [result, setResult] = useState<ResultState | null>(null);
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [myConsultations, setMyConsultations] = useState([]);
+
+  const [myConsultations, setMyConsultations] = useState<Consultation[]>([]);
+
   const [loadingConsults, setLoadingConsults] = useState(false);
 
   const [showMyConsultations, setShowMyConsultations] = useState(false);
 
-  // ─── check auth ─────────────────────────────
+  // ─────────────────────────────────────
+  // Check Auth
+  // ─────────────────────────────────────
   useEffect(() => {
     const token = localStorage.getItem("token");
+
     setIsLoggedIn(!!token);
 
     if (token) {
-      fetchConsultations(token);
+      fetchConsultations();
     }
   }, []);
 
-  // ─── fetch consultations ─────────────────────
-const fetchConsultations = async () => {
-  try {
-    setLoadingConsults(true);
+  // ─────────────────────────────────────
+  // Get My Consultations
+  // ─────────────────────────────────────
+  const fetchConsultations = async () => {
+    try {
+      setLoadingConsults(true);
 
-    const res = await consultationService.my();
+      const res = await consultationService.my();
 
-    setMyConsultations(res.data);
-  } catch (err) {
-    console.log(err);
-  } finally {
-    setLoadingConsults(false);
-  }
-};
+      setMyConsultations(res.data ?? []);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoadingConsults(false);
+    }
+  };
 
-  // ─── select type ─────────────────────────────
-  const handleSelect = (type) => {
+  // ─────────────────────────────────────
+  // Select Consultation Type
+  // ─────────────────────────────────────
+  const handleSelect = (type: string) => {
     setSelectedType(type);
     setResult(null);
   };
 
-  // ─── form change ─────────────────────────────
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+  // ─────────────────────────────────────
+  // Form Change
+  // ─────────────────────────────────────
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setForm((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
   };
 
-  // ─── submit ──────────────────────────────────
+  // ─────────────────────────────────────
+  // Submit Consultation
+  // ─────────────────────────────────────
   const handleSubmit = async () => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      setResult({ type: "error", message: "يجب تسجيل الدخول أولاً" });
-      return;
-    }
-
     if (!selectedType) {
-      setResult({ type: "error", message: "اختر نوع الاستشارة أولاً" });
+      setResult({
+        type: "error",
+        message: "اختر نوع الاستشارة أولاً",
+      });
       return;
     }
 
@@ -78,45 +125,43 @@ const fetchConsultations = async () => {
     setResult(null);
 
     try {
-      const res = await fetch(
-        "http://127.0.0.1:8000/api/consultations",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            type: selectedType,
-            ...form,
-          }),
-        }
-      );
-
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.message || "حدث خطأ");
+      await consultationService.create({
+        type: selectedType,
+        ...form,
+      });
 
       setResult({
         type: "success",
         message: "تم إرسال الطلب بنجاح 👌",
       });
 
-      setForm({ name: "", phone: "", message: "" });
+      setForm({
+        name: "",
+        phone: "",
+        message: "",
+      });
+
       setSelectedType(null);
 
-      fetchConsultations(token);
-    } catch (err) {
-      setResult({ type: "error", message: err.message });
+      fetchConsultations();
+    } catch (error: any) {
+      setResult({
+        type: "error",
+        message:
+          error?.response?.data?.message ||
+          "حدث خطأ أثناء إرسال الطلب",
+      });
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
-    <section className="py-20 bg-white dark:bg-gray-950" id="consultation">
+    <section
+      className="py-20 bg-white dark:bg-gray-950"
+      id="consultation"
+    >
       <div className="container mx-auto px-6 max-w-5xl">
-
         {/* HEADER */}
         <div className="text-center mb-10">
           <h2 className="text-3xl font-extrabold text-white">
@@ -149,16 +194,19 @@ const fetchConsultations = async () => {
                 <motion.div
                   key={opt.action}
                   onClick={() => handleSelect(opt.action)}
-                  className={`cursor-pointer p-6 rounded-2xl border bg-gray-900 ${
+                  whileHover={{ scale: 1.02 }}
+                  className={`cursor-pointer p-6 rounded-2xl border bg-gray-900 transition ${
                     selectedType === opt.action
                       ? "border-blue-500 scale-[1.02]"
                       : "border-gray-800"
                   }`}
                 >
                   <div className="text-3xl">{opt.icon}</div>
+
                   <h3 className="text-white font-bold mt-2">
                     {opt.title}
                   </h3>
+
                   <p className="text-gray-400 text-sm mt-1">
                     {opt.desc}
                   </p>
@@ -194,14 +242,14 @@ const fetchConsultations = async () => {
                   value={form.message}
                   onChange={handleChange}
                   placeholder="التفاصيل"
-                  rows="4"
+                  rows={4}
                   className="w-full p-3 mb-3 rounded-lg bg-gray-800 text-white"
                 />
 
                 <button
                   onClick={handleSubmit}
                   disabled={loading}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-xl"
+                  className="bg-blue-600 text-white px-6 py-2 rounded-xl disabled:opacity-50"
                 >
                   {loading ? "جارٍ الإرسال..." : "إرسال"}
                 </button>
@@ -220,7 +268,7 @@ const fetchConsultations = async () => {
               </div>
             )}
 
-            {/* BUTTON - MY CONSULTATIONS */}
+            {/* MY CONSULTATIONS BUTTON */}
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.95 }}
@@ -254,8 +302,12 @@ const fetchConsultations = async () => {
                 استشارتك السابقة
               </h3>
 
-              {myConsultations.length === 0 ? (
-                <p className="text-gray-400">مفيش استشارات لسه</p>
+              {loadingConsults ? (
+                <p className="text-gray-400">جاري التحميل...</p>
+              ) : myConsultations.length === 0 ? (
+                <p className="text-gray-400">
+                  لا توجد استشارات حالياً
+                </p>
               ) : (
                 <div className="space-y-3 max-h-[300px] overflow-auto">
                   {myConsultations.map((c) => (
@@ -267,6 +319,7 @@ const fetchConsultations = async () => {
                         <span className="text-white text-sm font-bold">
                           {c.type}
                         </span>
+
                         <span className="text-xs text-gray-400">
                           {c.status}
                         </span>
