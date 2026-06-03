@@ -1,4 +1,4 @@
-import React from "react";
+ 
 import { Link } from "react-router-dom";
 
 const Footer = () => {
@@ -112,7 +112,7 @@ const Footer = () => {
         {/* BOTTOM */}
         <div className="mt-10 pt-6 border-t border-gray-200 dark:border-gray-800 text-center text-sm text-gray-500">
 
-          © 2025 CORE S+ — جميع الحقوق محفوظة
+          © 2026  m.3laa — جميع الحقوق محفوظة
 
         </div>
 

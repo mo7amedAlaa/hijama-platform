@@ -8,6 +8,7 @@ import {
 
 import type { User } from "../types/index";
 import { authService } from "../services/api";
+import type { AxiosResponse } from "axios";
 
 interface AuthContextType {
   user: User | null;
@@ -68,13 +69,15 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     localStorage.removeItem("expiry");
   };
 
-  const updateProfile = async (data: Partial<User>) => {
-    const res = await authService.updateProfile(data);
+  const updateProfile = async (data: Partial<User>): Promise<User> => {
+    const res: AxiosResponse<User> = await authService.updateProfile(data);
 
-    setUser(res.user);
-    localStorage.setItem("user", JSON.stringify(res.user));
+    const updatedUser = res.data; // 👈 هنا التصحيح الحقيقي
 
-    return res.user;
+    setUser(updatedUser);
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+
+    return updatedUser;
   };
 
   const isAuth = !!user && !!token;
