@@ -1,9 +1,11 @@
 <?php
 
+
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-
+use Illuminate\Support\Facades\Gate;
+use App\Policies\AdminPolicy;
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -12,6 +14,8 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         //
+    Gate::define('admin', [AdminPolicy::class, 'admin']);
+
     }
 
     /**
