@@ -172,10 +172,10 @@ const Navbar: React.FC = () => {
             ) : (
               <>
                 <Link
-                  to="/account"
+                  to="/profile"
                   className="px-4 py-2 bg-gray-200 dark:bg-gray-800 rounded-lg"
                 >
-                  حسابي - {user?.name}
+                  حسابي - {user?.name.slice(0, 10)}
                 </Link>
 
                 <button
