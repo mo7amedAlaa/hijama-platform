@@ -45,5 +45,22 @@ public function update(Request $request)
         'message' => 'Profile updated successfully',
         'user' => $user->fresh()
     ]);
+
+}
+public function deleteUser($id)
+{
+    $user = User::findOrFail($id);
+
+    if ($user->role === 'admin') {
+        return response()->json([
+            'message' => 'لا يمكن حذف الأدمن'
+        ], 403);
+    }
+
+    $user->delete();
+
+    return response()->json([
+        'message' => 'تم الحذف بنجاح'
+    ]);
 }
 }

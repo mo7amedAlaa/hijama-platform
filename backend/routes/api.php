@@ -71,5 +71,6 @@ Route::get('/consultations', [ConsultationController::class, 'index']);
         // إدارة المستخدمين
         Route::get('/users',        [UserController::class, 'index']);
         Route::get('/users/{user}', [UserController::class, 'show']);
+        Route::delete('/users/{user}', [UserController::class, 'deleteUser']);
     });
 });

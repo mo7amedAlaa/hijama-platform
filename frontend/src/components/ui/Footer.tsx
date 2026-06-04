@@ -12,8 +12,10 @@ const Footer = () => {
 
           {/* BRAND */}
           <div>
-            <h2 className="text-xl font-extrabold text-gray-900 dark:text-white">
-              CORE <span className="text-blue-600">S+</span>
+            <h2 className="flex justify-start text-xl font-extrabold text-gray-900 dark:text-white" >
+             <a className="text-2xl font-extrabold text-gray-900 dark:text-white flex" dir="ltr">
+  CORE <span className="text-blue-600 ml-1">S+</span>
+</a>
             </h2>
 
             <p className="mt-3 text-sm text-gray-600 dark:text-gray-400 leading-[1.6]">
@@ -109,10 +111,10 @@ const Footer = () => {
 
         </div>
 
-        {/* BOTTOM */}
+      
         <div className="mt-10 pt-6 border-t border-gray-200 dark:border-gray-800 text-center text-sm text-gray-500">
 
-          © 2026  m.3laa — جميع الحقوق محفوظة
+          © 2026  mo.3laa — جميع الحقوق محفوظة
 
         </div>
 

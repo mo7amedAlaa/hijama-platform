@@ -55,10 +55,9 @@ const Navbar: React.FC = () => {
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-20">
 
-          {/* LOGO */}
-          <a className="text-2xl font-extrabold text-gray-900 dark:text-white">
-            CORE <span className="text-blue-600">S+</span>
-          </a>
+     <a className="text-2xl font-extrabold text-gray-900 dark:text-white flex" dir="ltr">
+  CORE <span className="text-blue-600 ml-1">S+</span>
+</a>
 
           {/* DESKTOP LINKS */}
           <div className="hidden md:flex items-center gap-2">

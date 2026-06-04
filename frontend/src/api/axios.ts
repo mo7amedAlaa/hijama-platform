@@ -1,7 +1,7 @@
 import axios, { AxiosError } from "axios";
 
 // 👇 خذ الرابط من متغير بيئة
-const baseURL = import.meta.env.VITE_API_URL || "https://higamaplatform.com/api/api";
+const baseURL = import.meta.env.VITE_API_URL || "https://higamaplatform.com/v2/api";
 
 const api = axios.create({
   baseURL,

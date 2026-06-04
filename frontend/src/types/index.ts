@@ -128,3 +128,14 @@ export interface UpdateProfilePayload {
   weight?: number;
   age?: number;
 } 
+  // ─── Types ────────────────────────────────────────────────────
+export interface DashboardStats {
+  totalBookings: number;
+  pendingBookings: number;
+  confirmedBookings: number;
+  completedBookings: number;
+  totalUsers: number;
+  totalRevenue: number;
+}
+
+export type AdminView = "overview" | "bookings" | "users" | "sessions" | "slots";

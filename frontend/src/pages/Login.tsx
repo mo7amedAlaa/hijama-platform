@@ -30,7 +30,13 @@ const Login = () => {
       // 🔥 AuthContext instead of localStorage here
       login(data.user, data.token);
 
-      navigate("/");
+   login(data.user, data.token);
+
+if (data.user.role === "admin") {
+  navigate("/admin");
+} else {
+  navigate("/");
+}
 
     } catch (err: any) {
       const message =

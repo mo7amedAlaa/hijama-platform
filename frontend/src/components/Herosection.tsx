@@ -70,7 +70,9 @@ useEffect(() => {
 
           {/* TITLE */}
           <h1 className="text-3xl md:text-5xl font-extrabold leading-[1.2] tracking-tight text-gray-900 dark:text-white">
-            CORE S+
+           <span dir="ltr">
+  CORE <span className="text-blue-600 ml-1">S+</span>
+</span>
             <br />
             <span className="text-blue-600">
               مركز الحجامة والاستشفاء المتكامل

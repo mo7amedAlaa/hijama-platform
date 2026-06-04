@@ -48,7 +48,7 @@ const WhyUsSection = () => {
           </p>
 
           <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white mt-2">
-            لماذا تختار <span className="text-blue-600">CORE S+</span>؟
+            لماذا تختار <span className="text-blue-600" dir="ltr">CORE S+</span>؟
           </h2>
 
           <p className="mt-3 text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-[1.6]">
