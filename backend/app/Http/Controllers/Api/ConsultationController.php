@@ -39,5 +39,21 @@ public function store(Request $request)
         ->latest()
         ->get();
 }
+public function replay(Request $request, $id){
+    $consultation = Consultation::findOrFail($id);
+    $data = $request->validate([
+        'doctor_reply' => 'required|string',
+    ]);
+    $data['status'] = 'ans';
+    $consultation->update($data);
+    return response()->json($consultation);
+}
+public function destroy(Request $request, $id){
+    $consultation = Consultation::findOrFail($id);
+    $consultation->delete();
+    return response()->json(['message' => 'تم حذف الاستشارة بنجاح']);
+}
+
+
 
 }

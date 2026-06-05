@@ -71,12 +71,13 @@ export const bookingService = {
 
   cancel: (id: number): Promise<AxiosResponse<{ message: string }>> =>
     api.delete(`/bookings/${id}`),
+  getOne: (id: number): Promise<AxiosResponse<Booking>> => api.get(`/admin/bookings/${id}`),
  
   
 };
  
 // services/api.ts
 export const consultationService = {
-  my: () => api.get("/consultations"),
+  my: () => api.get("/consultations/my"),
   create: (data: any) => api.post("/consultations", data),
 };

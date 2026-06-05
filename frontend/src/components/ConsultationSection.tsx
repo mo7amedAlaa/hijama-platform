@@ -64,7 +64,6 @@ const ConsultationSection = () => {
   // ─────────────────────────────────────
   useEffect(() => {
     const token = localStorage.getItem("token");
-
     setIsLoggedIn(!!token);
 
     if (token) {

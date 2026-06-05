@@ -17,6 +17,7 @@ interface AuthContextType {
   logout: () => void;
   updateProfile: (data: Partial<User>) => Promise<User>;
   isAuth: boolean;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -24,31 +25,36 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export const AuthProvider = ({ children }: PropsWithChildren) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
+  // ─── INIT AUTH ─────────────────────────────
   useEffect(() => {
     const savedUser = localStorage.getItem("user");
     const savedToken = localStorage.getItem("token");
     const expiry = localStorage.getItem("expiry");
 
-    if (!savedUser || !savedToken || !expiry) return;
+    if (!savedUser || !savedToken || !expiry) {
+      setLoading(false);
+      return;
+    }
 
     if (Date.now() > Number(expiry)) {
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
-      localStorage.removeItem("expiry");
+      localStorage.clear();
+      setLoading(false);
       return;
     }
 
     try {
-      setUser(JSON.parse(savedUser) as User);
+      setUser(JSON.parse(savedUser));
       setToken(savedToken);
     } catch {
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
-      localStorage.removeItem("expiry");
+      localStorage.clear();
+    } finally {
+      setLoading(false);
     }
   }, []);
 
+  // ─── LOGIN ─────────────────────────────
   const login = (user: User, token: string) => {
     setUser(user);
     setToken(token);
@@ -60,19 +66,22 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     localStorage.setItem("expiry", expiry.toString());
   };
 
+  // ─── LOGOUT ─────────────────────────────
   const logout = () => {
     setUser(null);
     setToken(null);
-
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    localStorage.removeItem("expiry");
+    localStorage.clear();
   };
 
+  // ─── UPDATE PROFILE ─────────────────────────
   const updateProfile = async (data: Partial<User>): Promise<User> => {
-    const res: AxiosResponse<User> = await authService.updateProfile(data);
+    const res: AxiosResponse<Partial<User>> =
+      await authService.updateProfile(data);
 
-    const updatedUser = res.data; // 👈 هنا التصحيح الحقيقي
+    const updatedUser = {
+      ...(user as User),
+      ...res.data,
+    };
 
     setUser(updatedUser);
     localStorage.setItem("user", JSON.stringify(updatedUser));
@@ -91,6 +100,7 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
         logout,
         updateProfile,
         isAuth,
+        loading,
       }}
     >
       {children}

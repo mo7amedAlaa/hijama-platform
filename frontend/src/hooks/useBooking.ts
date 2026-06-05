@@ -1,8 +1,8 @@
 // src/hooks/useBooking.ts
 import { useState, useCallback } from "react";
-import { sessionService, slotService, bookingService  } from "../services/api";
-import type { TherapySession, Slot, Booking, CreateBookingPayload } from "../types";
+import { sessionService, slotService, bookingService } from "../services/api";
 import { extractError } from "../api/axios";
+import type { TherapySession, Slot, Booking, CreateBookingPayload, GeneratedSlot } from "../types";
 
 // ─── shared state shape ──────────────────────────────────────
 interface AsyncState<T> {
@@ -36,7 +36,7 @@ export function useSessions() {
 // useSlots
 // ────────────────────────────────────────────────────────────
 export function useSlots() {
-  const [state, setState] = useState<AsyncState<Slot[]>>({
+  const [state, setState] = useState<AsyncState<GeneratedSlot[]>>({
     data: [], loading: false, error: null,
   });
 
@@ -102,4 +102,42 @@ export function useMyBookings() {
   }, []);
 
   return { bookings: state.data, loading: state.loading, error: state.error, fetch, cancel };
+}
+
+// ────────────────────────────────────────────────────────────
+// useShowBooking
+// ────────────────────────────────────────────────────────────
+export function useShowBooking() {
+  const [state, setState] = useState<AsyncState<Booking | null>>({
+    data: null,
+    loading: false,
+    error: null,
+  });
+
+  const fetch = useCallback(async (id: number) => {
+    setState((s) => ({ ...s, loading: true, error: null }));
+
+    try {
+      const { data } = await bookingService.getOne(id);
+
+      setState({
+        data,
+        loading: false,
+        error: null,
+      });
+    } catch (err) {
+      setState((s) => ({
+        ...s,
+        loading: false,
+        error: extractError(err),
+      }));
+    }
+  }, []);
+
+  return {
+    booking: state.data,
+    loading: state.loading,
+    error: state.error,
+    fetch,
+  };
 }

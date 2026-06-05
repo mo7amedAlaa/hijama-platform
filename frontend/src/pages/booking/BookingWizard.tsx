@@ -5,8 +5,8 @@ import { StepIndicator }  from "../../components/booking/StepIndicator";
 import { SessionCard }    from "../../components/booking/SessionCard";
 import { SlotPicker }     from "../../components/booking/SlotPicker";
 import { BookingSuccess } from "../../components/booking/BookingSuccess";
-import { useSessions, useSlots, useCreateBooking } from "../../hooks/useBooking";
-import type { TherapySession, Slot, MedicalForm } from "../../types";
+import { useSessions, useCreateBooking  } from "../../hooks/useBooking";
+import type { TherapySession, GeneratedSlot, MedicalForm } from "../../types";
 
 // ─── Step labels ─────────────────────────────────────────────
 const STEPS = ["الخدمة", "الموعد", "بياناتك", "التأكيد"] as const;
@@ -104,7 +104,7 @@ function MedicalFormStep({ form, onChange }: MedicalFormProps) {
           <label className="text-xs text-gray-500 mb-2 block">مستوى الألم</label>
           <select value={form.pain_level}
             onChange={e => onChange("pain_level", e.target.value)}
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm   focus:outline-none focus:border-emerald-500/60">
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/60">
             <option value="">اختر</option>
             <option value="1-3">1–3 خفيف</option>
             <option value="4-6">4–6 متوسط</option>
@@ -134,7 +134,7 @@ function MedicalFormStep({ form, onChange }: MedicalFormProps) {
 // ─── Step 3: Review ───────────────────────────────────────────
 interface ReviewProps {
   session: TherapySession | null;
-  slot: Slot | null;
+  slot: GeneratedSlot | null;
   date: string;
   medForm: MedicalForm;
 }
@@ -183,20 +183,19 @@ export default function BookingPage() {
   const [step, setStep] = useState<number>(0);
   const [selectedSession, setSelectedSession] = useState<TherapySession | null>(null);
   const [selectedDate,    setSelectedDate]    = useState<string>("");
-  const [selectedSlot,    setSelectedSlot]    = useState<Slot | null>(null);
+  const [selectedSlot,    setSelectedSlot]    = useState<GeneratedSlot | null>(null);
   const [medForm, setMedForm] = useState<MedicalForm>({
     complaints: [], conditions: [], goals: [],
     pain_level: "", injury_location: "", notes: "",
   });
 
+  // مش محتاج useSlots هنا — SlotPicker بيجيب المواعيد بنفسه
   const { sessions, loading: loadingSessions, error: sessionsErr, fetch: fetchSessions } = useSessions();
-  const { slots,    loading: loadingSlots,    error: slotsErr,    fetch: fetchSlots }    = useSlots();
   const { booking,  loading: submitting,      error: submitErr,   create }               = useCreateBooking();
   const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => { fetchSessions(); }, [fetchSessions]);
-  useEffect(() => { if (selectedDate) fetchSlots(selectedDate); }, [selectedDate, fetchSlots]);
-
+  
   const updateMed = <K extends keyof MedicalForm>(field: K, val: MedicalForm[K]) =>
     setMedForm(f => ({ ...f, [field]: val }));
 
@@ -212,17 +211,21 @@ export default function BookingPage() {
   const handleSubmit = async () => {
     if (!selectedSession || !selectedSlot) return;
     setLocalError(null);
-    try {
+   try {
       await create({
         therapy_session_id: selectedSession.id,
-        slot_id:            selectedSlot.id,
-        complaints:         medForm.complaints,
-        conditions:         medForm.conditions,
-        goals:              medForm.goals,
-        pain_level:         medForm.pain_level   || undefined,
-        injury_location:    medForm.injury_location || undefined,
-        notes:              medForm.notes         || undefined,
+
+         appointment_start: selectedSlot.start_time.slice(0, 5),
+
+        appointment_date: selectedSlot.date,
+        complaints: medForm.complaints,
+        conditions: medForm.conditions,
+        goals: medForm.goals,
+        pain_level: medForm.pain_level || undefined,
+        injury_location: medForm.injury_location || undefined,
+        notes: medForm.notes || undefined,
       });
+
       setStep(4);
     } catch {
       // error lives in submitErr from the hook
@@ -292,7 +295,7 @@ export default function BookingPage() {
           {/* Body */}
           <div className="px-6 pb-6 max-h-[60vh] overflow-y-auto">
             <ErrorBanner
-              msg={localError ?? sessionsErr ?? slotsErr ?? submitErr}
+              msg={localError ?? sessionsErr ?? submitErr}
               onClose={() => setLocalError(null)}
             />
 
@@ -312,11 +315,14 @@ export default function BookingPage() {
             {step === 1 && (
               <SlotPicker
                 date={selectedDate}
-                onDateChange={(d) => { setSelectedDate(d); setSelectedSlot(null); }}
-                slots={slots}
-                loadingSlots={loadingSlots}
+                onDateChange={(d) => {
+                  setSelectedDate(d);
+                  setSelectedSlot(null);
+                }}
                 selectedSlot={selectedSlot}
-                onSlotSelect={setSelectedSlot}
+                onSlotSelect={(s) => {
+                  if (s.is_available) setSelectedSlot(s);
+                }}
               />
             )}
 

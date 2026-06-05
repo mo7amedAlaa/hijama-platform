@@ -8,42 +8,33 @@ use Illuminate\Support\Str;
 
 class Booking extends Model
 {
-    use HasFactory;
-
     protected $fillable = [
-        'user_id', 'therapy_session_id', 'slot_id',
+        'user_id', 'therapy_session_id',
+        'appointment_date', 'appointment_time',   // ← بدل slot_id
         'status', 'booking_ref', 'notes',
         'complaints', 'conditions', 'goals',
-        'pain_level', 'injury_location', 'injury_duration',
+        'pain_level', 'injury_location',
+        'appointment_start', 'appointment_end',
+
     ];
 
     protected $casts = [
-        'complaints' => 'array',
-        'conditions' => 'array',
-        'goals'      => 'array',
+        'complaints'       => 'array',
+        'conditions'       => 'array',
+        'goals'            => 'array',
+        'appointment_date' => 'date',
     ];
 
-    // Auto-generate booking_ref
     protected static function booted(): void
     {
-        static::creating(function ($booking) {
-            $booking->booking_ref = 'CS-' . strtoupper(Str::random(6));
+        static::creating(function ($b) {
+            $b->booking_ref = 'CS-' . strtoupper(\Illuminate\Support\Str::random(6));
         });
     }
-
-    // Relations
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    public function therapySession()
-    {
-        return $this->belongsTo(TherapySession::class);
-    }
-
-    public function slot()
+public function slot()
     {
         return $this->belongsTo(Slot::class);
     }
+    public function user()         { return $this->belongsTo(User::class); }
+    public function therapySession(){ return $this->belongsTo(TherapySession::class); }
 }

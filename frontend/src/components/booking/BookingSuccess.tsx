@@ -13,8 +13,8 @@ interface BookingSuccessProps {
 export function BookingSuccess({ booking, onNewBooking, onViewBookings }: BookingSuccessProps) {
   const rows = [
     { label: "الخدمة",  val: booking?.therapy_session?.name_ar },
-    { label: "التاريخ", val: booking?.slot?.date },
-    { label: "الوقت",   val: booking?.slot?.start_time?.slice(0, 5) },
+    { label: "التاريخ", val: booking?.appointment_date?.slice(0, 10) },
+    { label: "الوقت",   val: booking?.appointment_start?.slice(0, 5) },
     { label: "الحالة",  val: "قيد المراجعة" },
   ];
   return (

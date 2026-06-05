@@ -11,20 +11,27 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->foreignId('therapy_session_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('slot_id')->constrained()->cascadeOnDelete();
-            $table->enum('status', ['pending', 'confirmed', 'cancelled', 'completed'])->default('pending');
-            $table->string('booking_ref')->unique();         // CS-XXXX
+
+            // الموعد مباشرة بدون foreign key لـ slots
+            $table->date('appointment_date');
+            $table->time('appointment_time');
+
+            $table->enum('status', ['pending','confirmed','cancelled','completed'])
+                  ->default('pending');
+            $table->string('booking_ref')->unique();
             $table->text('notes')->nullable();
 
-            // بيانات الشكوى
+            // بيانات طبية
             $table->json('complaints')->nullable();
-            $table->json('conditions')->nullable();          // التاريخ المرضي
+            $table->json('conditions')->nullable();
             $table->json('goals')->nullable();
             $table->string('pain_level')->nullable();
             $table->string('injury_location')->nullable();
-            $table->string('injury_duration')->nullable();
 
             $table->timestamps();
+
+            // منع حجز نفس الوقت مرتين
+            $table->unique(['appointment_date', 'appointment_time']);
         });
     }
     public function down(): void { Schema::dropIfExists('bookings'); }

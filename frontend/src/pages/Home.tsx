@@ -11,7 +11,6 @@ function Home () {
     <Layout>   
     <HeroSection />
     <ServicesSection />
- 
     <WhyUsSection />
     <TestimonialsSection />
     <FAQSection />

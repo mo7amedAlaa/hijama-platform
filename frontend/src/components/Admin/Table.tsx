@@ -1,7 +1,7 @@
 // ─── Table wrapper ────────────────────────────────────────────
  export function Table({ children }: { children: React.ReactNode }) {
   return (
-    <div className="overflow-x-auto rounded-2xl border border-white/8">
+    <div className="overflow-x-auto  rounded-2xl border border-white/8">
       <table className="w-full text-sm text-right">{children}</table>
     </div>
   );

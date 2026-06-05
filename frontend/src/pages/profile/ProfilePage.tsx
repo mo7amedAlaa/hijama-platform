@@ -54,8 +54,8 @@ function EditModal({ booking, onClose, onSave }: EditModalProps) {
         <div className="bg-white/5 border border-white/8 rounded-2xl p-4 mb-5 space-y-2">
           {[
             { label:"الخدمة",  val: booking.therapy_session?.name_ar },
-            { label:"التاريخ", val: booking.slot?.date },
-            { label:"الوقت",   val: booking.slot?.start_time?.slice(0,5) },
+            { label:"التاريخ", val: booking?.appointment_date?.slice(0,10) },
+            { label:"الوقت",   val: booking?.appointment_start?.slice(0,5) },
           ].map(r => (
             <div key={r.label} className="flex justify-between text-sm">
               <span className="text-gray-500">{r.label}</span>
@@ -174,8 +174,8 @@ function BookingCard({ booking, onEdit, onCancel }: BookingCardProps) {
           </div>
 
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-3">
-            <span>📅 {booking.slot?.date ?? "—"}</span>
-            <span>⏰ {booking.slot?.start_time?.slice(0,5) ?? "—"}</span>
+            <span>📅 {booking?.appointment_date?.slice(0,10)?? "—"}</span>
+            <span>⏰ {booking?.appointment_start?.slice(0,5) ?? "—"}</span>
             <span>🔖 {booking.booking_ref}</span>
           </div>
 

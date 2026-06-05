@@ -57,20 +57,22 @@ class TherapySessionController extends Controller
         return response()->json(['message' => 'تم الحذف']);
     }
 
-    public function nextSession(Request $request)
+public function nextSession(Request $request)
 {
     $user = $request->user();
 
     $booking = $user->bookings()
         ->whereIn('status', ['pending', 'confirmed'])
-        ->whereHas('slot', function ($q) {
-            $q->whereDate('date', '>=', now()->toDateString());
+        ->where(function ($q) {
+            $q->whereDate('appointment_date', '>', today())
+              ->orWhere(function ($q) {
+                  $q->whereDate('appointment_date', today())
+                    ->whereTime('appointment_start', '>=', now()->format('H:i:s'));
+              });
         })
-        ->with(['slot', 'therapySession'])
-        ->get()
-        ->sortBy(function ($b) {
-            return $b->slot->date . ' ' . $b->slot->start_time;
-        })
+        ->orderBy('appointment_date')
+        ->orderBy('appointment_start')
+        ->with('therapySession')
         ->first();
 
     return response()->json([

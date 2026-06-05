@@ -28,7 +28,7 @@ export function SessionCard({ session, selected, onSelect }) {
           </div>
           <p className="text-gray-400 text-xs leading-relaxed mb-3">{session.description}</p>
           <div className="flex items-center gap-3">
-            <span className="text-emerald-400 font-bold text-base">{session.price} <span className="text-xs font-normal">ر.س</span></span>
+            <span className="text-emerald-400 font-bold text-base">{session.price} <span className="text-xs font-normal">ج</span></span>
             <span className="text-gray-600 text-xs">·</span>
             <span className="text-gray-500 text-xs">⏱ {session.duration_minutes} دقيقة</span>
           </div>

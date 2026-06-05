@@ -3,64 +3,50 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Slot;
+use App\Services\ScheduleService;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
 class SlotController extends Controller
 {
-    // GET /api/slots?date=2025-06-15
-    public function index(Request $request)
-    {
-        $date = $request->query('date', now()->toDateString());
+    public function __construct(
+        private readonly ScheduleService $scheduleService
+    ) {}
 
-        $slots = Slot::available()->onDate($date)->orderBy('start_time')->get();
-
-        return response()->json($slots);
-    }
-
-    // POST /api/slots  (Admin: ينشئ مواعيد)
-    public function store(Request $request)
-    {
-        $data = $request->validate([
-            'date'       => 'required|date|after_or_equal:today',
-            'start_time' => 'required|date_format:H:i',
-            'end_time'   => 'required|date_format:H:i|after:start_time',
-        ]);
-
-        $slot = Slot::firstOrCreate(
-            ['date' => $data['date'], 'start_time' => $data['start_time']],
-            $data
-        );
-
-        return response()->json($slot, 201);
-    }
-
-    // POST /api/slots/bulk  (Admin: ينشئ مواعيد بالجملة)
-    public function bulk(Request $request)
+    /**
+     * GET /api/slots?date=2025-06-25
+     * يرجع كل المواعيد (متاح + محجوز) ليوم واحد
+     */
+    public function index(Request $request): JsonResponse
     {
         $request->validate([
-            'date'       => 'required|date|after_or_equal:today',
-            'start_hour' => 'required|integer|between:0,23',
-            'end_hour'   => 'required|integer|between:0,23|gt:start_hour',
-            'interval'   => 'required|integer|min:30',      // دقائق
+            'date' => 'required|date|after_or_equal:today',
         ]);
 
-        $slots   = [];
-        $current = $request->start_hour * 60;
-        $end     = $request->end_hour   * 60;
+        $slots = $this->scheduleService->getSlotsForDate($request->date);
 
-        while ($current + $request->interval <= $end) {
-            $start = sprintf('%02d:%02d', intdiv($current, 60), $current % 60);
-            $next  = $current + $request->interval;
-            $endT  = sprintf('%02d:%02d', intdiv($next, 60), $next % 60);
+        return response()->json([
+            'date'      => $request->date,
+            'slots'     => $slots,
+            'available' => collect($slots)->where('is_available', true)->count(),
+            'booked'    => collect($slots)->where('is_available', false)->count(),
+        ]);
+    }
 
-            $slots[] = Slot::firstOrCreate(
-                ['date' => $request->date, 'start_time' => $start],
-                ['end_time' => $endT, 'is_available' => true]
-            );
-            $current = $next;
-        }
+    /**
+     * POST /api/slots/batch
+     * يرجع مواعيد أيام متعددة دفعة واحدة
+     * body: { dates: ["2025-06-25", "2025-06-27", "2025-06-30"] }
+     */
+    public function batch(Request $request): JsonResponse
+    {
+        $request->validate([
+            'dates'   => 'required|array|min:1|max:31',
+            'dates.*' => 'date|after_or_equal:today',
+        ]);
 
-        return response()->json($slots, 201);
+        $data = $this->scheduleService->getSlotsForDates($request->dates);
+
+        return response()->json($data);
     }
 }

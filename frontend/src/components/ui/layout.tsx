@@ -8,7 +8,7 @@ function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-[#FDFDFC] text-[#1C1C1A] dark:bg-[#0A0F1E] dark:text-[#E8EDF5] transition-colors duration-300">
         <WhatsAppButton />
       <Navbar />
-      <main className="container  ">{children}</main>
+      <main className="">{children}</main>
       <Footer />
     </div>
   );

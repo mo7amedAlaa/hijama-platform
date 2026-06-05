@@ -15,16 +15,18 @@ use App\Http\Controllers\Api\SlotController;
 use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ConsultationController;
+use App\Http\Controllers\Api\WorkScheduleController;
+use App\Http\Controllers\Api\ScheduleController;
 
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
-Route::get('/sessions', [TherapySessionController::class, 'index']);
-
-Route::get('/slots',    [SlotController::class, 'index']);
-
+// Public
+Route::get('/sessions',      [TherapySessionController::class, 'index']);
+Route::get('/slots',         [SlotController::class, 'index']);
+Route::post('/slots/batch',  [SlotController::class, 'batch']);
 Route::prefix('auth')->group(function () {
 
     Route::post('/register', RegisterController::class);
@@ -40,37 +42,47 @@ Route::prefix('auth')->group(function () {
     Route::get('/google/callback', [GoogleController::class,'callback']);
 });
 
+// Protected
 Route::middleware('auth:sanctum')->group(function () {
-
-    // Auth
     Route::post('/logout', LogoutController::class);
     Route::get('/me',      [UserController::class, 'me']);
     Route::put('/me',      [UserController::class, 'update']);
- Route::get('/me/next-session', [therapySessionController::class, 'nextSession']);
-    // Bookings
+    Route::get('/me/next-session', [therapySessionController::class, 'nextSession']);
     Route::get('/my-bookings',          [BookingController::class, 'myBookings']);
     Route::apiResource('/bookings',      BookingController::class);
     Route::post('/consultations', [ConsultationController::class, 'store']);
-Route::get('/consultations', [ConsultationController::class, 'index']);
+    Route::get('/consultations', [ConsultationController::class, 'index']);
+    Route::put('/consultations/{id}', [ConsultationController::class, 'replay']);
+    Route::delete('/consultations/{id}', [ConsultationController::class, 'destroy']);
 
-    // ============================================================
+    Route::get('/consultations/my', [ConsultationController::class, 'myConsultations']);
+     // ============================================================
     // Admin-only routes
     // ============================================================
     Route::middleware('can:admin')->group(function () {
-
-        // إدارة الجلسات
         Route::get('/all-sessions',            [TherapySessionController::class, 'all']);
         Route::post('/sessions',           [TherapySessionController::class, 'store']);
         Route::put('/sessions/{therapySession}',    [TherapySessionController::class, 'update']);
         Route::delete('/sessions/{therapySession}', [TherapySessionController::class, 'destroy']);
 
-        // إدارة المواعيد
-        Route::post('/slots',       [SlotController::class, 'store']);
-        Route::post('/slots/bulk',  [SlotController::class, 'bulk']);
+
+        Route::get ('/admin/work-schedule',       [ScheduleController::class, 'getWorkSchedule']);
+        Route::put ('/admin/work-schedule',       [ScheduleController::class, 'updateWorkSchedule']);
+        Route::get ('admin/slots/stats',         [ScheduleController::class, 'slotsStats']);
+        Route::get ('/admin/blocked-slots',       [ScheduleController::class, 'getBlockedSlots']);
+        Route::post('/admin/blocked-slots',       [ScheduleController::class, 'blockSlot']);
+        Route::delete('/admin/blocked-slots/{blockedSlot}', [ScheduleController::class, 'unblockSlot']);
+
 
         // إدارة المستخدمين
         Route::get('/users',        [UserController::class, 'index']);
         Route::get('/users/{user}', [UserController::class, 'show']);
         Route::delete('/users/{user}', [UserController::class, 'deleteUser']);
+        Route::get('/admin/bookings/{booking}', [BookingController::class, 'show']);
+
+// toggle active
+Route::patch('/work-schedules/{id}/toggle', [WorkScheduleController::class, 'toggle']);
+
+
     });
 });
