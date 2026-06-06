@@ -80,4 +80,6 @@ export const bookingService = {
 export const consultationService = {
   my: () => api.get("/consultations/my"),
   create: (data: any) => api.post("/consultations", data),
+   
+  delete: (id: number) => api.delete(`/consultations/${id}`),
 };

@@ -10,40 +10,42 @@ use Carbon\Carbon;
 class ScheduleService
 {
     /**
-     * كل المواعيد ليوم معين (متاح + محجوز)
+     * جميع المواعيد ليوم محدد
      */
     public function getSlotsForDate(string $date): array
     {
-        $carbon    = Carbon::parse($date);
+        $carbon = Carbon::parse($date);
         $dayOfWeek = $carbon->dayOfWeek;
 
-        // ── 1. جدول العمل ─────────────────────
         $schedule = WorkSchedule::where('day_of_week', $dayOfWeek)
             ->where('is_active', true)
             ->first();
 
-        if (!$schedule) return [];
+        if (!$schedule) {
+            return [];
+        }
 
-        // ── 2. اليوم كامل معطل؟ ────────────────
         $isFullDayBlocked = BlockedSlots::where('date', $date)
             ->whereNull('start_time')
             ->exists();
 
-        if ($isFullDayBlocked) return [];
+        if ($isFullDayBlocked) {
+            return [];
+        }
 
-        // ── 3. الأوقات المعطلة ─────────────────
         $blockedTimes = BlockedSlots::where('date', $date)
             ->whereNotNull('start_time')
             ->pluck('start_time')
-            ->map(fn($t) => substr($t, 0, 5))
+            ->map(fn($time) => substr($time, 0, 5))
             ->toArray();
 
-        // ── 4. الحجوزات (IMPORTANT: range not single time)
         $bookings = Booking::whereIn('status', ['pending', 'confirmed'])
             ->where('appointment_date', $date)
-            ->get(['appointment_start', 'appointment_end']);
+            ->get([
+                'appointment_start',
+                'appointment_end'
+            ]);
 
-        // ── 5. توليد السلاوتس ─────────────────
         $slots = $this->generateTimeSlots(
             $schedule->start_time,
             $schedule->end_time,
@@ -51,45 +53,52 @@ class ScheduleService
         );
 
         return collect($slots)
-            ->map(fn($slot) => [
-                'date'         => $date,
-                'start_time'   => $slot['start'],
-                'end_time'     => $slot['end'],
-                'is_available' => !$this->isOverlapping(
-                    $slot['start'],
-                    $slot['end'],
-                    $blockedTimes,
-                    $bookings
-                ),
-            ])
+            ->map(function ($slot) use ($date, $blockedTimes, $bookings) {
+                return [
+                    'date' => $date,
+                    'start_time' => $slot['start'],
+                    'end_time' => $slot['end'],
+                    'is_available' => !$this->isOverlapping(
+                        $slot['start'],
+                        $slot['end'],
+                        $blockedTimes,
+                        $bookings
+                    ),
+                ];
+            })
             ->values()
             ->toArray();
     }
 
     /**
-     * مواعيد متاحة فقط
+     * المواعيد المتاحة فقط
      */
     public function getAvailableSlotsForDate(string $date): array
     {
-        return array_filter(
-            $this->getSlotsForDate($date),
-            fn($s) => $s['is_available']
+        return array_values(
+            array_filter(
+                $this->getSlotsForDate($date),
+                fn($slot) => $slot['is_available']
+            )
         );
     }
 
     /**
-     * تحقق من توافر وقت معين
+     * التحقق من توفر Slot محدد
      */
-    public function isSlotAvailable(string $date, string $startTime): bool
-    {
+    public function isSlotAvailable(
+        string $date,
+        string $startTime
+    ): bool {
         return collect($this->getSlotsForDate($date))
-            ->contains(fn($s) =>
-                $s['start_time'] === $startTime && $s['is_available']
-            );
+            ->contains(function ($slot) use ($startTime) {
+                return $slot['start_time'] === $startTime
+                    && $slot['is_available'];
+            });
     }
 
     /**
-     * مواعيد متعددة
+     * جلب Slots لعدة أيام
      */
     public function getSlotsForDates(array $dates): array
     {
@@ -97,6 +106,7 @@ class ScheduleService
 
         foreach ($dates as $date) {
             $slots = $this->getSlotsForDate($date);
+
             if (!empty($slots)) {
                 $result[$date] = $slots;
             }
@@ -106,10 +116,13 @@ class ScheduleService
     }
 
     /**
-     * توليد السلووتس
+     * إنشاء Slots حسب مدة الجلسة
      */
-    private function generateTimeSlots(string $start, string $end, int $duration = 60): array
-    {
+    private function generateTimeSlots(
+        string $start,
+        string $end,
+        int $duration = 60
+    ): array {
         $slots = [];
 
         $current = strtotime($start);
@@ -118,11 +131,13 @@ class ScheduleService
         while ($current < $endTime) {
             $next = strtotime("+{$duration} minutes", $current);
 
-            if ($next > $endTime) break;
+            if ($next > $endTime) {
+                break;
+            }
 
             $slots[] = [
                 'start' => date('H:i', $current),
-                'end'   => date('H:i', $next),
+                'end' => date('H:i', $next),
             ];
 
             $current = $next;
@@ -132,7 +147,7 @@ class ScheduleService
     }
 
     /**
-     * 🔥 أهم جزء: منع التداخل (Overlap Detection)
+     * التحقق من وجود تداخل
      */
     private function isOverlapping(
         string $slotStart,
@@ -140,16 +155,22 @@ class ScheduleService
         array $blockedTimes,
         $bookings
     ): bool {
-        // 1. blocked times (single time slots)
+
         if (in_array($slotStart, $blockedTimes)) {
             return true;
         }
 
-        // 2. bookings (time range overlap)
-        foreach ($bookings as $b) {
+        $slotStartTs = strtotime($slotStart);
+        $slotEndTs = strtotime($slotEnd);
+
+        foreach ($bookings as $booking) {
+
+            $bookingStartTs = strtotime($booking->appointment_start);
+            $bookingEndTs = strtotime($booking->appointment_end);
+
             if (
-                $slotStart < substr($b->appointment_end, 0, 5) &&
-                $slotEnd   > substr($b->appointment_start, 0, 5)
+                $slotStartTs < $bookingEndTs &&
+                $slotEndTs > $bookingStartTs
             ) {
                 return true;
             }
@@ -157,18 +178,39 @@ class ScheduleService
 
         return false;
     }
-    public function isRangeAvailable(string $date, string $start, string $end): bool
-{
-    $bookings = Booking::whereIn('status', ['pending', 'confirmed'])
-        ->where('appointment_date', $date)
-        ->get(['appointment_start', 'appointment_end']);
 
-    foreach ($bookings as $b) {
-        if ($start < $b->appointment_end && $end > $b->appointment_start) {
-            return false;
+    /**
+     * التحقق من توفر فترة زمنية كاملة
+     */
+    public function isRangeAvailable(
+        string $date,
+        string $start,
+        string $end
+    ): bool {
+
+        $startTs = strtotime($start);
+        $endTs = strtotime($end);
+
+        $bookings = Booking::whereIn('status', ['pending', 'confirmed'])
+            ->where('appointment_date', $date)
+            ->get([
+                'appointment_start',
+                'appointment_end'
+            ]);
+
+        foreach ($bookings as $booking) {
+
+            $bookingStartTs = strtotime($booking->appointment_start);
+            $bookingEndTs = strtotime($booking->appointment_end);
+
+            if (
+                $startTs < $bookingEndTs &&
+                $endTs > $bookingStartTs
+            ) {
+                return false;
+            }
         }
-    }
 
-    return true;
-}
+        return true;
+    }
 }

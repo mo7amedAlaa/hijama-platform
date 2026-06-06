@@ -39,14 +39,22 @@ public function store(Request $request)
         ->latest()
         ->get();
 }
-public function replay(Request $request, $id){
-    $consultation = Consultation::findOrFail($id);
-    $data = $request->validate([
-        'doctor_reply' => 'required|string',
+public function reply(Request $request, $id){
+   $consultation = Consultation::findOrFail($id);
+
+    $validated = $request->validate([
+        'doctor_reply' => ['required', 'string'],
     ]);
-    $data['status'] = 'ans';
-    $consultation->update($data);
-    return response()->json($consultation);
+
+    $consultation->update([
+        'doctor_reply' => $validated['doctor_reply'],
+        'status' => 'ans',
+    ]);
+
+    return response()->json([
+        'message' => 'تم إرسال الرد بنجاح',
+        'data' => $consultation->fresh(),
+    ]);
 }
 public function destroy(Request $request, $id){
     $consultation = Consultation::findOrFail($id);

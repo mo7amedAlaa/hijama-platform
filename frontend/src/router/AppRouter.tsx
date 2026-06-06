@@ -10,6 +10,8 @@ import AdminDashboard from "../pages/admin/AdminDashboard";
 import ProtectedRoute from "./ProtectedRoute";
 import AdminRoute from "./AdminRoute";
 import ShowBooking from "../pages/admin/ShowBooking";
+import HijamaGuide from "../pages/hijamaGuide";
+import AboutUs from "../pages/AboutUs";
 
 export default function AppRouter() {
   return (
@@ -19,6 +21,8 @@ export default function AppRouter() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/hijama_guide" element={<HijamaGuide />} />
+      <Route path="/about_us" element={<AboutUs />} />
 
       {/* protected user */}
       <Route element={<ProtectedRoute />}>

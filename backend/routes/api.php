@@ -52,9 +52,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('/bookings',      BookingController::class);
     Route::post('/consultations', [ConsultationController::class, 'store']);
     Route::get('/consultations', [ConsultationController::class, 'index']);
-    Route::put('/consultations/{id}', [ConsultationController::class, 'replay']);
+    Route::put('/consultations/{id}', [ConsultationController::class, 'reply']);
     Route::delete('/consultations/{id}', [ConsultationController::class, 'destroy']);
-
     Route::get('/consultations/my', [ConsultationController::class, 'myConsultations']);
      // ============================================================
     // Admin-only routes
@@ -64,24 +63,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/sessions',           [TherapySessionController::class, 'store']);
         Route::put('/sessions/{therapySession}',    [TherapySessionController::class, 'update']);
         Route::delete('/sessions/{therapySession}', [TherapySessionController::class, 'destroy']);
-
-
         Route::get ('/admin/work-schedule',       [ScheduleController::class, 'getWorkSchedule']);
         Route::put ('/admin/work-schedule',       [ScheduleController::class, 'updateWorkSchedule']);
         Route::get ('admin/slots/stats',         [ScheduleController::class, 'slotsStats']);
         Route::get ('/admin/blocked-slots',       [ScheduleController::class, 'getBlockedSlots']);
         Route::post('/admin/blocked-slots',       [ScheduleController::class, 'blockSlot']);
         Route::delete('/admin/blocked-slots/{blockedSlot}', [ScheduleController::class, 'unblockSlot']);
-
-
-        // إدارة المستخدمين
         Route::get('/users',        [UserController::class, 'index']);
         Route::get('/users/{user}', [UserController::class, 'show']);
         Route::delete('/users/{user}', [UserController::class, 'deleteUser']);
         Route::get('/admin/bookings/{booking}', [BookingController::class, 'show']);
 
-// toggle active
-Route::patch('/work-schedules/{id}/toggle', [WorkScheduleController::class, 'toggle']);
+        Route::patch('/work-schedules/{id}/toggle', [WorkScheduleController::class, 'toggle']);
 
 
     });

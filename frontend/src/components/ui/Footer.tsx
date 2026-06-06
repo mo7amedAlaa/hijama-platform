@@ -46,7 +46,7 @@ const Footer = () => {
 
             <ul className="space-y-2 text-sm">
               <li>
-                <Link className="text-gray-600 dark:text-gray-400 hover:text-blue-600" to="/about">
+                <Link className="text-gray-600 dark:text-gray-400 hover:text-blue-600" to="/about_us">
                   من نحن
                 </Link>
               </li>
@@ -82,7 +82,7 @@ const Footer = () => {
               <li>📞 0500000000</li>
               <li>💬 واتساب</li>
               <li>📸 إنستغرام</li>
-              <li>📍 الرياض</li>
+              <li>📍 طوخ-قليوبية-مصر</li>
 
             </ul>
 

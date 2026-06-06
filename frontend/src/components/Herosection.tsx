@@ -95,9 +95,10 @@ useEffect(() => {
               احجز جلستك الآن ←
             </Link>
 
-            <button className="px-6 py-3 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition">
-              🎥 شاهد كيف نعمل
-            </button>
+            
+            <Link to={"/hijama_guide"} className="px-6 py-3 rounded-xl border text-center border-gray-300 dark:border-gray-600 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+دليل الحجامة
+قبل - أثناء - بعد الحجامة            </Link>
 
           </div>
 

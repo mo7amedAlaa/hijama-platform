@@ -11,6 +11,7 @@ class Consultation extends Model
         'name',
         'phone',
         'message',
+        'doctor_reply',
         'status',
         'user_id',
     ];

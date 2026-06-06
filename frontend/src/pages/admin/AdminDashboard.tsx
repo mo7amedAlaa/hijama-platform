@@ -19,7 +19,7 @@ interface DashboardStats {
   totalBookings: number; pendingBookings: number; confirmedBookings: number;
   completedBookings: number; totalUsers: number; totalRevenue: number;
 }
-type ConsultationStatus = "pending" | "ans";
+type ConsultationStatus = "pending" | "ans"|"string";
 
 type Consultation = {
   id: number;
