@@ -52,22 +52,12 @@ const Footer = () => {
               </li>
 
               <li>
-                <Link className="text-gray-600 dark:text-gray-400 hover:text-blue-600" to="/contact">
+                <Link className="text-gray-600 dark:text-gray-400 hover:text-blue-600" to="https://wa.me/01031830595">
                   تواصل معنا
                 </Link>
-              </li>
+              </li> 
 
-              <li>
-                <Link className="text-gray-600 dark:text-gray-400 hover:text-blue-600" to="/privacy">
-                  سياسة الخصوصية
-                </Link>
-              </li>
-
-              <li>
-                <Link className="text-gray-600 dark:text-gray-400 hover:text-blue-600" to="/terms">
-                  الشروط والأحكام
-                </Link>
-              </li>
+              
             </ul>
           </div>
 
@@ -81,27 +71,27 @@ const Footer = () => {
 
               <li>📞 ٠١٠٣١٨٣٠٥٩٥</li>
               <li>💬 واتساب</li>
-               <li>📍 طوخ-قليوبية-مصر</li>
+               <li>📍 ينها-القليوبية-مصر</li>
 
             </ul>
 
             {/* SOCIAL */}
             <div className="flex gap-3 mt-4 text-sm">
 
-              <a href="#" className="hover:text-blue-600 transition">
-                تويتر
+              <a href="https://www.tiktok.com/@pro.recovery1?_r=1&_t=ZS-972T3DTo2Ta" className="hover:text-blue-600 transition">
+                تيك توك
               </a>
 
-              <a href="#" className="hover:text-pink-500 transition">
-                إنستغرام
+              <a href="https://www.facebook.com/share/1EDRsWSDnp/" className="hover:text-pink-500 transition">
+                فيسبوك
               </a>
 
-              <a href="#" className="hover:text-yellow-500 transition">
+              <a href="https://www.snapchat.com/add/core_s263909?share_id=_XMmop7tgZI&locale=ar-EG" className="hover:text-yellow-500 transition">
                 سناب
               </a>
 
-              <a href="#" className="hover:text-red-500 transition">
-                يوتيوب
+              <a href="https://www.instagram.com/cores123951?igsh=MXhxOGVtNWtvODE4YQ==" className="hover:text-violet-600 transition">
+                انستقرام
               </a>
 
             </div>

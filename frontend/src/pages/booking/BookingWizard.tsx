@@ -11,41 +11,71 @@ import type { TherapySession, GeneratedSlot, MedicalForm } from "../../types";
 // ─── Step labels ──────────────────────────────────────────────
 const STEPS = ["الخدمة", "الموعد", "بياناتك", "التأكيد"] as const;
 
-// ─── 1. الشكاوى المحدّثة ──────────────────────────────────────
-const COMPLAINTS = [
-  { id: "spine",          label: "إصابات العمود الفقري" },
-  { id: "shoulder",       label: "إصابات الكتف"         },
-  { id: "elbow_wrist",    label: "إصابات المرفق والرسغ" },
-  { id: "pelvis_thigh",   label: "إصابات الحوض والفخذ"  },
-  { id: "knee",           label: "إصابات الركبة"         },
-  { id: "leg_ankle_foot", label: "إصابات الساق والكاحل والقدم" },
+// ─── Session type detection ───────────────────────────────────
+// نحدد نوع الجلسة بناءً على اسمها
+type SessionCategory = "rehab" | "general";
+
+function getSessionCategory(session: TherapySession | null): SessionCategory {
+  if (!session) return "general";
+  const name = (session.name_ar + " " + session.name).toLowerCase();
+  const rehabKeywords = ["تأهيل", "إصابة", "اصابة", "rehab", "injury", "sport"];
+  return rehabKeywords.some(k => name.includes(k)) ? "rehab" : "general";
+}
+
+// ─── Complaints بناءً على نوع الجلسة ────────────────────────
+const REHAB_COMPLAINTS = [
+  { id: "spine",          label: "إصابات العمود الفقري"         },
+  { id: "shoulder",       label: "إصابات الكتف"                 },
+  { id: "elbow_wrist",    label: "إصابات المرفق والرسغ"         },
+  { id: "pelvis_thigh",   label: "إصابات الحوض والفخذ"          },
+  { id: "knee",           label: "إصابات الركبة"                 },
+  { id: "leg_ankle_foot", label: "إصابات الساق والكاحل والقدم"  },
+];
+
+const GENERAL_COMPLAINTS = [
+  { id: "back_pain",    label: "آلام الظهر"              },
+  { id: "neck_pain",    label: "آلام الرقبة"              },
+  { id: "headache",     label: "الصداع والشقيقة"          },
+  { id: "fatigue",      label: "الإرهاق وضعف المناعة"     },
+  { id: "blood_circ",   label: "ضعف الدورة الدموية"       },
+  { id: "sleep",        label: "مشاكل النوم"              },
+  { id: "stress",       label: "التوتر والقلق"            },
+  { id: "digestion",    label: "مشاكل الهضم"              },
 ];
 
 const CONDITIONS = [
-  { id:"bp",    label:"ضغط دم"    },
-  { id:"sugar", label:"سكر"       },
-  { id:"heart", label:"أمراض قلب" },
-  { id:"anemia",label:"أنيميا"    },
-  { id:"none",  label:"لا يوجد"   },
+  { id:"bp",     label:"ضغط دم"    },
+  { id:"sugar",  label:"سكر"       },
+  { id:"heart",  label:"أمراض قلب" },
+  { id:"anemia", label:"أنيميا"    },
+  { id:"none",   label:"لا يوجد"   },
 ];
 
-const GOALS = [
+const GOALS_REHAB = [
+  { id:"pain",        label:"تخفيف الألم"       },
+  { id:"mobility",    label:"زيادة نطاق الحركة" },
+  { id:"strength",    label:"تقوية العضلات"      },
+  { id:"sport_return",label:"العودة للرياضة"     },
+  { id:"recovery",    label:"الاستشفاء السريع"   },
+];
+
+const GOALS_GENERAL = [
   { id:"pain",        label:"تخفيف الألم"   },
-  { id:"mobility",    label:"زيادة الحركة"  },
+  { id:"relax",       label:"الاسترخاء"     },
   { id:"recovery",    label:"الاستشفاء"     },
   { id:"performance", label:"تحسين الأداء"  },
-  { id:"relax",       label:"الاسترخاء"     },
+  { id:"detox",       label:"التنقية والتخلص من السموم" },
 ];
 
-// ─── MedicalForm type مُوسَّع ─────────────────────────────────
-// أضف هذه الحقول في src/types/index.ts
-// rehab_timing: "before" | "after" | ""
-// gender: "male" | "female" | ""
-// blood_thinner: boolean
+// ─── Extended form type ───────────────────────────────────────
+interface ExtendedMedicalForm extends MedicalForm {
+  rehab_timing:  "before" | "after" | "";
+  gender:        "male" | "female" | "";
+  blood_thinner: boolean;
+}
 
 // ─── UI Helpers ───────────────────────────────────────────────
-interface ErrorBannerProps { msg: string | null; onClose: () => void; }
-function ErrorBanner({ msg, onClose }: ErrorBannerProps) {
+function ErrorBanner({ msg, onClose }: { msg: string | null; onClose: () => void }) {
   if (!msg) return null;
   return (
     <div className="flex items-center justify-between gap-3 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-400 mb-4">
@@ -65,8 +95,7 @@ function LoadingSkeleton({ rows = 3 }: { rows?: number }) {
   );
 }
 
-interface CheckChipProps { label: string; checked: boolean; onToggle: () => void; }
-function CheckChip({ label, checked, onToggle }: CheckChipProps) {
+function CheckChip({ label, checked, onToggle }: { label: string; checked: boolean; onToggle: () => void }) {
   return (
     <button type="button" onClick={onToggle}
       className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all active:scale-95
@@ -78,9 +107,9 @@ function CheckChip({ label, checked, onToggle }: CheckChipProps) {
   );
 }
 
-// Radio option
-interface RadioOptionProps { label: string; value: string; current: string; onChange: (v: string) => void; }
-function RadioOption({ label, value, current, onChange }: RadioOptionProps) {
+function RadioOption({ label, value, current, onChange }: {
+  label: string; value: string; current: string; onChange: (v: string) => void;
+}) {
   const selected = current === value;
   return (
     <button type="button" onClick={() => onChange(value)}
@@ -97,9 +126,9 @@ function RadioOption({ label, value, current, onChange }: RadioOptionProps) {
   );
 }
 
-// Toggle switch
-interface ToggleProps { label: string; desc?: string; checked: boolean; onChange: (v: boolean) => void; }
-function Toggle({ label, desc, checked, onChange }: ToggleProps) {
+function Toggle({ label, desc, checked, onChange }: {
+  label: string; desc?: string; checked: boolean; onChange: (v: boolean) => void;
+}) {
   return (
     <div className={`flex items-center justify-between gap-4 p-4 rounded-xl border transition-all
       ${checked ? "bg-red-500/8 border-red-500/25" : "bg-white/5 border-white/10"}`}>
@@ -117,19 +146,26 @@ function Toggle({ label, desc, checked, onChange }: ToggleProps) {
   );
 }
 
-// ─── Step 2: Medical form ──────────────────────────────────────
-interface ExtendedMedicalForm extends MedicalForm {
-  rehab_timing:  "before" | "after" | "";
-  gender:        "male"   | "female" | "";
-  blood_thinner: boolean;
+// ─── FormSection label ────────────────────────────────────────
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return <p className="text-xs text-gray-500 mb-3 font-semibold">{children}</p>;
 }
 
-interface MedicalFormProps {
+// ─────────────────────────────────────────────────────────────
+// Medical Form — يتغير حسب نوع الجلسة
+// ─────────────────────────────────────────────────────────────
+function MedicalFormStep({
+  form, onChange, category,
+}: {
   form: ExtendedMedicalForm;
   onChange: <K extends keyof ExtendedMedicalForm>(field: K, val: ExtendedMedicalForm[K]) => void;
-}
+  category: SessionCategory;
+}) {
+  const isRehab = category === "rehab";
 
-function MedicalFormStep({ form, onChange }: MedicalFormProps) {
+  const complaints = isRehab ? REHAB_COMPLAINTS : GENERAL_COMPLAINTS;
+  const goals      = isRehab ? GOALS_REHAB      : GOALS_GENERAL;
+
   const toggle = (field: "complaints" | "conditions" | "goals", id: string) => {
     const current = form[field] as string[];
     onChange(field, current.includes(id) ? current.filter(x => x !== id) : [...current, id]);
@@ -138,20 +174,31 @@ function MedicalFormStep({ form, onChange }: MedicalFormProps) {
   return (
     <div className="space-y-6">
 
-      {/* ── 3. الجنس ── */}
+      {/* ── نوع الجلسة badge ── */}
+      <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-semibold
+        ${isRehab
+          ? "bg-blue-500/10 border-blue-500/25 text-blue-400"
+          : "bg-emerald-500/10 border-emerald-500/25 text-emerald-400"}`}>
+        <span>{isRehab ? "🦾" : "💆"}</span>
+        <span>{isRehab ? "النموذج مخصص لجلسات التأهيل والإصابات" : "النموذج مخصص للجلسات العلاجية والاسترخاء"}</span>
+      </div>
+
+      {/* ── الجنس (مشترك) ── */}
       <div>
-        <p className="text-xs text-gray-500 mb-3 font-semibold">الجنس *</p>
+        <SectionLabel>الجنس *</SectionLabel>
         <div className="flex gap-3">
-          <RadioOption label="👨 ذكر"  value="male"   current={form.gender} onChange={v => onChange("gender", v as "male"|"female"|"")} />
-          <RadioOption label="👩 أنثى" value="female" current={form.gender} onChange={v => onChange("gender", v as "male"|"female"|"")} />
+          <RadioOption label="👨 ذكر"  value="male"   current={form.gender}
+            onChange={v => onChange("gender", v as "male"|"female"|"")} />
+          <RadioOption label="👩 أنثى" value="female" current={form.gender}
+            onChange={v => onChange("gender", v as "male"|"female"|"")} />
         </div>
       </div>
 
-      {/* ── 1. الشكوى ── */}
+      {/* ── الشكوى — تتغير حسب الجلسة ── */}
       <div>
-        <p className="text-xs text-gray-500 mb-3 font-semibold">الشكوى الرئيسية</p>
+        <SectionLabel>{isRehab ? "موقع الإصابة" : "الشكوى الرئيسية"}</SectionLabel>
         <div className="flex flex-wrap gap-2">
-          {COMPLAINTS.map(o => (
+          {complaints.map(o => (
             <CheckChip key={o.id} label={o.label}
               checked={form.complaints.includes(o.id)}
               onToggle={() => toggle("complaints", o.id)} />
@@ -159,30 +206,34 @@ function MedicalFormStep({ form, onChange }: MedicalFormProps) {
         </div>
       </div>
 
-      {/* ── 2. تأهيل قبل أم بعد عملية ── */}
-      <div>
-        <p className="text-xs text-gray-500 mb-3 font-semibold">التأهيل</p>
-        <div className="flex gap-3">
-          <RadioOption label="🔵 قبل العملية"  value="before" current={form.rehab_timing} onChange={v => onChange("rehab_timing", v as "before"|"after"|"")} />
-          <RadioOption label="🟢 بعد العملية"  value="after"  current={form.rehab_timing} onChange={v => onChange("rehab_timing", v as "before"|"after"|"")} />
+      {/* ── قبل/بعد العملية — فقط للتأهيل ── */}
+      {isRehab && (
+        <div>
+          <SectionLabel>التأهيل</SectionLabel>
+          <div className="flex gap-3">
+            <RadioOption label="🔵 قبل العملية" value="before" current={form.rehab_timing}
+              onChange={v => onChange("rehab_timing", v as "before"|"after"|"")} />
+            <RadioOption label="🟢 بعد العملية" value="after"  current={form.rehab_timing}
+              onChange={v => onChange("rehab_timing", v as "before"|"after"|"")} />
+          </div>
+          {form.rehab_timing && (
+            <p className={`text-xs mt-2 px-3 py-2 rounded-lg border ${
+              form.rehab_timing === "before"
+                ? "text-blue-400 bg-blue-500/10 border-blue-500/20"
+                : "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+            }`}>
+              {form.rehab_timing === "before"
+                ? "✓ تأهيل ما قبل الجراحة — يهدف لتقوية العضلات وتحسين نطاق الحركة قبل التدخل الجراحي"
+                : "✓ تأهيل ما بعد الجراحة — يهدف للتعافي السريع واستعادة الوظيفة الكاملة"
+              }
+            </p>
+          )}
         </div>
-        {form.rehab_timing && (
-          <p className={`text-xs mt-2 px-3 py-2 rounded-lg border ${
-            form.rehab_timing === "before"
-              ? "text-blue-400 bg-blue-500/10 border-blue-500/20"
-              : "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
-          }`}>
-            {form.rehab_timing === "before"
-              ? "✓ تأهيل ما قبل الجراحة — يهدف لتقوية العضلات وتحسين نطاق الحركة قبل التدخل الجراحي"
-              : "✓ تأهيل ما بعد الجراحة — يهدف للتعافي السريع واستعادة الوظيفة الكاملة"
-            }
-          </p>
-        )}
-      </div>
+      )}
 
-      {/* ── التاريخ المرضي ── */}
+      {/* ── التاريخ المرضي (مشترك) ── */}
       <div>
-        <p className="text-xs text-gray-500 mb-3 font-semibold">التاريخ المرضي</p>
+        <SectionLabel>التاريخ المرضي</SectionLabel>
         <div className="flex flex-wrap gap-2">
           {CONDITIONS.map(o => (
             <CheckChip key={o.id} label={o.label}
@@ -192,29 +243,25 @@ function MedicalFormStep({ form, onChange }: MedicalFormProps) {
         </div>
       </div>
 
-      {/* ── 4. علاج سيولة الدم ── */}
+      {/* ── سيولة الدم (مشترك) ── */}
       <Toggle
         label="علاج سيولة الدم (مضادات التخثر)"
         desc="مثل: وارفارين، هيبارين، أسبرين جرعة عالية"
         checked={form.blood_thinner}
         onChange={v => onChange("blood_thinner", v)}
       />
-
       {form.blood_thinner && (
         <div className="flex gap-3 bg-red-500/10 border border-red-500/25 rounded-xl px-4 py-3 text-xs text-red-400 leading-relaxed">
-          <span className="text-base flex-shrink-0">⚠️</span>
-          <span>
-            يرجى إخبار المتخصص بنوع الدواء وجرعته قبل الجلسة.
-            قد يحتاج الأمر لمراجعة الطبيب المشرف قبل بدء العلاج.
-          </span>
+          <span className="flex-shrink-0">⚠️</span>
+          <span>يرجى إخبار المتخصص بنوع الدواء وجرعته قبل الجلسة. قد يحتاج الأمر لمراجعة الطبيب المشرف أولاً.</span>
         </div>
       )}
 
-      {/* ── أهداف الجلسة ── */}
+      {/* ── أهداف الجلسة — تتغير حسب الجلسة ── */}
       <div>
-        <p className="text-xs text-gray-500 mb-3 font-semibold">أهداف الجلسة</p>
+        <SectionLabel>أهداف الجلسة</SectionLabel>
         <div className="flex flex-wrap gap-2">
-          {GOALS.map(o => (
+          {goals.map(o => (
             <CheckChip key={o.id} label={o.label}
               checked={form.goals.includes(o.id)}
               onToggle={() => toggle("goals", o.id)} />
@@ -222,70 +269,71 @@ function MedicalFormStep({ form, onChange }: MedicalFormProps) {
         </div>
       </div>
 
+      {/* ── مستوى الألم + مكان الإصابة ── */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-xs text-gray-500 mb-2 block">مستوى الألم</label>
-          <select value={form.pain_level} onChange={e => onChange("pain_level", e.target.value)}
+          <select value={form.pain_level}
+            onChange={e => onChange("pain_level", e.target.value)}
             className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/60">
             <option value="">اختر</option>
-            <option value="1-3">1–3 خفيف</option>
-            <option value="4-6">4–6 متوسط</option>
-            <option value="7-10">7–10 شديد</option>
+            <option value="3">1–3 خفيف</option>
+            <option value="5">4–6 متوسط</option>
+            <option value="10">7–10 شديد</option>
           </select>
         </div>
         <div>
-          <label className="text-xs text-gray-500 mb-2 block">مكان الإصابة</label>
-          <input value={form.injury_location} onChange={e => onChange("injury_location", e.target.value)}
-            placeholder="مثال: الركبة اليمنى"
+          <label className="text-xs text-gray-500 mb-2 block">
+            {isRehab ? "المنطقة المصابة" : "مكان الألم"}
+          </label>
+          <input value={form.injury_location}
+            onChange={e => onChange("injury_location", e.target.value)}
+            placeholder={isRehab ? "مثال: الركبة اليمنى" : "مثال: أسفل الظهر"}
             className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500/60" />
         </div>
       </div>
 
       <div>
         <label className="text-xs text-gray-500 mb-2 block">ملاحظات إضافية (اختياري)</label>
-        <textarea value={form.notes} onChange={e => onChange("notes", e.target.value)}
-          rows={3} placeholder="أي معلومات إضافية..."
+        <textarea value={form.notes}
+          onChange={e => onChange("notes", e.target.value)}
+          rows={3} placeholder="أي معلومات إضافية تريد إخبارنا بها..."
           className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500/60 resize-none" />
       </div>
     </div>
   );
 }
 
-// ─── Step 3: Review ───────────────────────────────────────────
-interface ReviewProps {
+// ─── Review Step ──────────────────────────────────────────────
+function ReviewStep({ session, slot, date, medForm, category }: {
   session: TherapySession | null;
   slot:    GeneratedSlot  | null;
   date:    string;
   medForm: ExtendedMedicalForm;
-}
-
-function ReviewStep({ session, slot, date, medForm }: ReviewProps) {
-  // deadline = اليوم + 7 أيام
+  category: SessionCategory;
+}) {
   const deadline = new Date();
   deadline.setDate(deadline.getDate() + 7);
   const deadlineStr = deadline.toLocaleDateString("ar-EG", {
     day: "numeric", month: "long", year: "numeric",
   });
 
-  const genderLabel = medForm.gender === "male" ? "ذكر" : medForm.gender === "female" ? "أنثى" : undefined;
-  const rehabLabel  = medForm.rehab_timing === "before" ? "قبل العملية" : medForm.rehab_timing === "after" ? "بعد العملية" : undefined;
+  const complaints = category === "rehab" ? REHAB_COMPLAINTS : GENERAL_COMPLAINTS;
 
   const rows = [
-    { label:"الخدمة",         val: session?.name_ar },
-    { label:"التاريخ",        val: date },
-    { label:"الوقت",          val: slot?.start_time?.slice(0, 5) },
-    { label:"السعر",          val: session ? `${session.price} ر.س` : undefined },
-    { label:"الجنس",          val: genderLabel },
-    { label:"التأهيل",        val: rehabLabel },
-    { label:"سيولة الدم",     val: medForm.blood_thinner ? "يتناول علاج سيولة" : undefined },
-    { label:"مستوى الألم",    val: medForm.pain_level || undefined },
-    { label:"مكان الإصابة",   val: medForm.injury_location || undefined },
+    { label:"الخدمة",       val: session?.name_ar },
+    { label:"التاريخ",      val: date },
+    { label:"الوقت",        val: slot?.start_time?.slice(0,5) },
+    { label:"السعر",        val: session ? `${session.price} ر.س` : undefined },
+    { label:"الجنس",        val: medForm.gender === "male" ? "ذكر" : medForm.gender === "female" ? "أنثى" : undefined },
+    { label:"التأهيل",      val: medForm.rehab_timing === "before" ? "قبل العملية" : medForm.rehab_timing === "after" ? "بعد العملية" : undefined },
+    { label:"سيولة الدم",   val: medForm.blood_thinner ? "يتناول علاج سيولة" : undefined },
+    { label:"مستوى الألم",  val: medForm.pain_level || undefined },
+    { label:"مكان الألم",   val: medForm.injury_location || undefined },
   ];
 
   return (
     <div className="space-y-4">
-
-      {/* ملخص البيانات */}
       <div className="bg-emerald-500/8 border border-emerald-500/25 rounded-2xl p-5 space-y-3">
         {rows.filter(r => r.val).map(r => (
           <div key={r.label} className="flex justify-between text-sm">
@@ -295,13 +343,14 @@ function ReviewStep({ session, slot, date, medForm }: ReviewProps) {
         ))}
       </div>
 
-      {/* الشكاوى */}
       {medForm.complaints.length > 0 && (
         <div>
-          <p className="text-xs text-gray-500 mb-2">الشكاوى المحددة</p>
+          <p className="text-xs text-gray-500 mb-2">
+            {category === "rehab" ? "مناطق الإصابة" : "الشكاوى"}
+          </p>
           <div className="flex flex-wrap gap-1.5">
             {medForm.complaints.map(c => {
-              const found = COMPLAINTS.find(x => x.id === c);
+              const found = complaints.find(x => x.id === c);
               return (
                 <span key={c} className="px-2 py-1 bg-white/8 border border-white/10 rounded-lg text-xs text-gray-300">
                   {found?.label ?? c}
@@ -312,7 +361,7 @@ function ReviewStep({ session, slot, date, medForm }: ReviewProps) {
         </div>
       )}
 
-      {/* ── 5. تنبيه الدفع ── */}
+      {/* تنبيه الدفع */}
       <div className="bg-amber-500/10 border-2 border-amber-500/40 rounded-2xl p-4 space-y-3">
         <div className="flex items-center gap-2">
           <span className="text-xl">💳</span>
@@ -331,14 +380,11 @@ function ReviewStep({ session, slot, date, medForm }: ReviewProps) {
           </div>
           <div className="flex items-center gap-2">
             <span>🏦</span>
-            <span>اسم البنك: <span className="text-white font-bold">Vodafone Cash</span></span>
+            <span>الشبكة: <span className="text-white font-bold">Vodafone Cash</span></span>
           </div>
           <div className="flex items-center gap-2">
             <span>📅</span>
-            <span>
-              آخر موعد للتحويل:{" "}
-              <span className="text-amber-400 font-bold">{deadlineStr}</span>
-            </span>
+            <span>آخر موعد: <span className="text-amber-400 font-bold">{deadlineStr}</span></span>
           </div>
         </div>
         <div className="flex gap-2 bg-red-500/10 border border-red-500/20 rounded-xl p-2.5 text-xs text-red-400">
@@ -347,7 +393,6 @@ function ReviewStep({ session, slot, date, medForm }: ReviewProps) {
         </div>
       </div>
 
-      {/* الموافقة على الشروط */}
       <div className="bg-white/4 border border-white/10 rounded-xl p-3 text-xs text-gray-500 leading-relaxed">
         بالضغط على "تأكيد الحجز" توافق على شروط وأحكام المركز، وتُقرّ بصحة البيانات المدخلة.
         يُرجى الحضور قبل ١٠ دقائق من الموعد.
@@ -359,28 +404,30 @@ function ReviewStep({ session, slot, date, medForm }: ReviewProps) {
 // ─── MAIN PAGE ────────────────────────────────────────────────
 export default function BookingPage() {
   const navigate = useNavigate();
-  const [step, setStep]           = useState<number>(0);
+  const [step, setStep]                       = useState<number>(0);
   const [selectedSession, setSelectedSession] = useState<TherapySession | null>(null);
   const [selectedDate,    setSelectedDate]    = useState<string>("");
   const [selectedSlot,    setSelectedSlot]    = useState<GeneratedSlot | null>(null);
-
-  const [medForm, setMedForm] = useState<ExtendedMedicalForm>({
-    complaints:    [],
-    conditions:    [],
-    goals:         [],
-    pain_level:    "",
-    injury_location: "",
-    notes:         "",
-    rehab_timing:  "",
-    gender:        "",
-    blood_thinner: false,
+  const [medForm, setMedForm]                 = useState<ExtendedMedicalForm>({
+    complaints: [], conditions: [], goals: [],
+    pain_level: "", injury_location: "", notes: "",
+    rehab_timing: "", gender: "", blood_thinner: false,
   });
 
   const { sessions, loading: loadingSessions, error: sessionsErr, fetch: fetchSessions } = useSessions();
   const { booking,  loading: submitting,      error: submitErr,   create }               = useCreateBooking();
   const [localError, setLocalError] = useState<string | null>(null);
 
+  // تحديد نوع الجلسة تلقائياً
+  const sessionCategory = getSessionCategory(selectedSession);
+
   useEffect(() => { fetchSessions(); }, [fetchSessions]);
+
+  // إعادة تعيين الشكاوى والأهداف لما تتغير الجلسة
+  // عشان لا تبقى شكوى من نوع تأهيل في جلسة حجامة
+  useEffect(() => {
+    setMedForm(f => ({ ...f, complaints: [], goals: [], rehab_timing: "" }));
+  }, [selectedSession]);
 
   const updateMed = <K extends keyof ExtendedMedicalForm>(field: K, val: ExtendedMedicalForm[K]) =>
     setMedForm(f => ({ ...f, [field]: val }));
@@ -388,7 +435,7 @@ export default function BookingPage() {
   const canNext = (): boolean => {
     if (step === 0) return !!selectedSession;
     if (step === 1) return !!selectedSlot;
-    if (step === 2) return !!medForm.gender; // الجنس إجباري
+    if (step === 2) return !!medForm.gender;
     return true;
   };
 
@@ -406,18 +453,15 @@ export default function BookingPage() {
         complaints:         medForm.complaints,
         conditions:         medForm.conditions,
         goals:              medForm.goals,
-        pain_level:         medForm.pain_level    || undefined,
-        injury_location:    medForm.injury_location || undefined,
-        notes:              medForm.notes          || undefined,
-        // حقول جديدة
-        gender:             medForm.gender         || undefined,
-        rehab_timing:       medForm.rehab_timing   || undefined,
+        pain_level:         medForm.pain_level      || undefined,
+        injury_location:    medForm.injury_location  || undefined,
+        notes:              medForm.notes            || undefined,
+        gender:             medForm.gender           || undefined,
+        rehab_timing:       medForm.rehab_timing     || undefined,
         blood_thinner:      medForm.blood_thinner,
       });
       setStep(4);
-    } catch {
-      // submitErr من الـ hook
-    }
+    } catch { /* submitErr من الـ hook */ }
   };
 
   const handleReset = () => {
@@ -498,10 +542,22 @@ export default function BookingPage() {
               />
             )}
 
-            {step === 2 && <MedicalFormStep form={medForm} onChange={updateMed} />}
+            {step === 2 && (
+              <MedicalFormStep
+                form={medForm}
+                onChange={updateMed}
+                category={sessionCategory}
+              />
+            )}
 
             {step === 3 && (
-              <ReviewStep session={selectedSession} slot={selectedSlot} date={selectedDate} medForm={medForm} />
+              <ReviewStep
+                session={selectedSession}
+                slot={selectedSlot}
+                date={selectedDate}
+                medForm={medForm}
+                category={sessionCategory}
+              />
             )}
           </div>
 
@@ -530,10 +586,10 @@ export default function BookingPage() {
         {/* Summary pill */}
         {step > 0 && selectedSession && (
           <div className="mt-3 flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 text-xs text-gray-400">
-            <span className="text-base">🏥</span>
+            <span className="text-base">{sessionCategory === "rehab" ? "🦾" : "💆"}</span>
             <span className="font-semibold text-white">{selectedSession.name_ar}</span>
             {selectedDate && <><span>·</span><span>{selectedDate}</span></>}
-            {selectedSlot && <><span>·</span><span className="text-emerald-400 font-bold">{selectedSlot.start_time.slice(0, 5)}</span></>}
+            {selectedSlot && <><span>·</span><span className="text-emerald-400 font-bold">{selectedSlot.start_time.slice(0,5)}</span></>}
           </div>
         )}
       </div>

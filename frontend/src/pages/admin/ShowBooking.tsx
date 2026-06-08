@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { useShowBooking } from "../../hooks/useBooking";
 
 const medicalMap: Record<string, string> = {
-  // complaints
+  // REHAB_COMPLAINTS
   spine: "إصابات العمود الفقري",
   shoulder: "إصابات الكتف",
   elbow_wrist: "إصابات المرفق والرسغ",
@@ -14,14 +14,24 @@ const medicalMap: Record<string, string> = {
   knee: "إصابات الركبة",
   leg_ankle_foot: "إصابات الساق والكاحل والقدم",
 
-  // conditions
+  // GENERAL_COMPLAINTS
+  back_pain: "آلام الظهر",
+  neck_pain: "آلام الرقبة",
+  headache: "الصداع والشقيقة",
+  fatigue: "الإرهاق وضعف المناعة",
+  blood_circ: "ضعف الدورة الدموية",
+  sleep: "مشاكل النوم",
+  stress: "التوتر والقلق",
+  digestion: "مشاكل الهضم",
+
+  // CONDITIONS
   bp: "ضغط الدم",
   sugar: "مرض السكري",
   heart: "أمراض القلب",
   anemia: "أنيميا",
   none: "لا يوجد",
 
-  // goals
+  // GOALS
   performance: "تحسين الأداء",
   recovery: "الاستشفاء",
   mobility: "زيادة الحركة",
@@ -154,8 +164,9 @@ export default function BookingDetailsPage() {
           : "—"
       }
     />
-
-    <Info
+{
+  booking.rehab_timing &&
+     <Info
       title="نوع التأهيل"
       value={
         booking.rehab_timing === "before"
@@ -165,6 +176,9 @@ export default function BookingDetailsPage() {
           : "غير محدد"
       }
     />
+  
+}
+   
 
     <Info
       title="أدوية سيولة الدم"
@@ -191,7 +205,7 @@ export default function BookingDetailsPage() {
   <div className="space-y-4">
 
     <TextBlock
-      title="نوع الإصابة"
+      title="نوع الشكوي"
       value={formatMedicalList(booking.complaints)}
     />
 

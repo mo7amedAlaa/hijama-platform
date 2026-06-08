@@ -51,7 +51,7 @@ public function store(Request $request): JsonResponse
         'appointment_date'   => 'required|date|after_or_equal:today',
         'appointment_start'  => 'required|date_format:H:i',
         'notes'              => 'nullable|string|max:500',
-        'complaints'         => 'required|array',
+        'complaints'         => 'nullable|array',
         'complaints.*'       => 'string',
         'conditions'         => 'required|array',
         'conditions.*'       => 'string',
@@ -60,7 +60,7 @@ public function store(Request $request): JsonResponse
         'pain_level'         => 'nullable|string',
         'injury_location'    => 'nullable|string|max:255',
         'gender'             => 'required|in:male,female',
-        'rehab_timing'       => 'required|in:before,after',
+        'rehab_timing'       => 'nullable|in:before,after',
         'blood_thinner'      => 'required|boolean',
     ], [
         'therapy_session_id.required' => 'جلسة العلاج مطلوبة.',

@@ -49,7 +49,7 @@ const CTASection = () => {
 
           {/* SECONDARY CTA */}
           <a
-            href="tel:+201234567890"
+            href="tel:+201031830595"
             className="px-8 py-4 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 transition font-medium"
           >
             📞 تواصل معنا
