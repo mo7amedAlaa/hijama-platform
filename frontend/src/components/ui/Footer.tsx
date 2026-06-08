@@ -79,10 +79,9 @@ const Footer = () => {
 
             <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
 
-              <li>📞 0500000000</li>
+              <li>📞 ٠١٠٣١٨٣٠٥٩٥</li>
               <li>💬 واتساب</li>
-              <li>📸 إنستغرام</li>
-              <li>📍 طوخ-قليوبية-مصر</li>
+               <li>📍 طوخ-قليوبية-مصر</li>
 
             </ul>
 

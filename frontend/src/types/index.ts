@@ -98,12 +98,17 @@ export interface CreateBookingPayload {
 
 // ─── Medical form (local UI state) ──────────────────────────
 export interface MedicalForm {
+  gender: string;
+
   complaints: string[];
   conditions: string[];
   goals: string[];
+
   pain_level: string;
   injury_location: string;
   notes: string;
+
+  blood_thinners: string;
 }
 
 // ─── API pagination wrapper ──────────────────────────────────
@@ -217,12 +222,18 @@ export interface Booking {
   pain_level: string | null;
   injury_location: string | null;
   injury_duration: string | null;
+  blood_thinner: string | null;
+  gender: string | null;
+  rehab_timing: string | null;
+  
   created_at: string;
   updated_at: string;
   // eager-loaded relations
   user?: User;
   therapy_session?: TherapySession;
   slot?: Slot;
+
+
 }
 
 export interface CreateBookingPayload {
@@ -249,6 +260,7 @@ export interface GeneratedSlot {
 export interface MedicalForm {
   complaints: string[];
   conditions: string[];
+  gender: string;
   goals: string[];
   pain_level: string;
   injury_location: string;

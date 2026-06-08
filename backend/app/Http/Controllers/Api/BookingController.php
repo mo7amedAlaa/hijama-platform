@@ -44,28 +44,55 @@ class BookingController extends Controller
     }
 
     // ── POST /api/bookings ────────────────────────────────
- public function store(Request $request): JsonResponse
+public function store(Request $request): JsonResponse
 {
     $data = $request->validate([
         'therapy_session_id' => 'required|exists:therapy_sessions,id',
         'appointment_date'   => 'required|date|after_or_equal:today',
         'appointment_start'  => 'required|date_format:H:i',
         'notes'              => 'nullable|string|max:500',
-        'complaints'         => 'nullable|array',
+        'complaints'         => 'required|array',
         'complaints.*'       => 'string',
-        'conditions'         => 'nullable|array',
+        'conditions'         => 'required|array',
         'conditions.*'       => 'string',
-        'goals'              => 'nullable|array',
+        'goals'              => 'required|array',
         'goals.*'            => 'string',
         'pain_level'         => 'nullable|string',
         'injury_location'    => 'nullable|string|max:255',
+        'gender'             => 'required|in:male,female',
+        'rehab_timing'       => 'required|in:before,after',
+        'blood_thinner'      => 'required|boolean',
+    ], [
+        'therapy_session_id.required' => 'جلسة العلاج مطلوبة.',
+        'therapy_session_id.exists'   => 'جلسة العلاج غير موجودة.',
+
+        'appointment_date.required'   => 'تاريخ الموعد مطلوب.',
+        'appointment_date.date'       => 'تاريخ الموعد غير صالح.',
+        'appointment_date.after_or_equal' => 'لا يمكن اختيار تاريخ في الماضي.',
+
+        'appointment_start.required'  => 'وقت بدء الموعد مطلوب.',
+        'appointment_start.date_format' => 'صيغة الوقت غير صحيحة.',
+
+        'complaints.required' => 'يجب إدخال الشكاوى.',
+        'conditions.required' => 'يجب إدخال الحالات.',
+        'goals.required'      => 'يجب إدخال الأهداف.',
+
+        'gender.required'     => 'الجنس مطلوب.',
+        'gender.in'           => 'قيمة الجنس غير صحيحة.',
+
+        'rehab_timing.required' => 'وقت التأهيل مطلوب.',
+        'rehab_timing.in'       => 'قيمة وقت التأهيل غير صحيحة.',
+
+        'blood_thinner.required' => 'حقل مميعات الدم مطلوب.',
+        'blood_thinner.boolean'  => 'قيمة مميعات الدم يجب أن تكون صحيحة أو خاطئة.',
     ]);
 
-     $session = \App\Models\TherapySession::findOrFail($data['therapy_session_id']);
-    $duration = $session->duration_minutes; // بالدقيقة
+    $session = \App\Models\TherapySession::findOrFail($data['therapy_session_id']);
+    $duration = $session->duration_minutes;
 
-     $start = Carbon::createFromFormat('H:i', $data['appointment_start']);
+    $start = Carbon::createFromFormat('H:i', $data['appointment_start']);
     $end   = $start->copy()->addMinutes($duration);
+
     $data['appointment_end'] = $end->format('H:i');
 
     if (!$this->scheduleService->isRangeAvailable(
@@ -74,11 +101,12 @@ class BookingController extends Controller
         $data['appointment_end']
     )) {
         return response()->json([
-            'message' => 'هذا الموعد غير متاح أو محجوز، اختر وقت آخر.',
+            'message' => 'الوقت المختار غير متاح، اختر وقت آخر.',
+            'error'   => 'TIME_SLOT_NOT_AVAILABLE'
         ], 422);
     }
 
-     $booking = DB::transaction(function () use ($data, $request) {
+    $booking = DB::transaction(function () use ($data, $request) {
 
         $exists = Booking::whereIn('status', ['pending', 'confirmed'])
             ->where('appointment_date', $data['appointment_date'])
@@ -90,7 +118,10 @@ class BookingController extends Controller
             ->exists();
 
         if ($exists) {
-            throw new \Exception('هذا الموعد غير متاح.');
+            return response()->json([
+                'message' => 'هذا الموعد محجوز بالفعل.',
+                'error'   => 'APPOINTMENT_CONFLICT'
+            ], 409);
         }
 
         return Booking::create([
@@ -99,6 +130,10 @@ class BookingController extends Controller
             'status'  => 'pending',
         ]);
     });
+
+    if ($booking instanceof JsonResponse) {
+        return $booking;
+    }
 
     return response()->json(
         $booking->load('therapySession'),

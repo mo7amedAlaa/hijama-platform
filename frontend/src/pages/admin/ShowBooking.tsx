@@ -7,13 +7,12 @@ import { useShowBooking } from "../../hooks/useBooking";
 
 const medicalMap: Record<string, string> = {
   // complaints
-  lower_back: "آلام أسفل الظهر",
-  neck: "آلام الرقبة",
-  shoulder: "آلام الكتف",
-  knee: "آلام الركبة",
-  muscle_strain: "شد عضلي",
-  disc: "انزلاق غضروفي",
-  other: "أخرى",
+  spine: "إصابات العمود الفقري",
+  shoulder: "إصابات الكتف",
+  elbow_wrist: "إصابات المرفق والرسغ",
+  pelvis_thigh: "إصابات الحوض والفخذ",
+  knee: "إصابات الركبة",
+  leg_ankle_foot: "إصابات الساق والكاحل والقدم",
 
   // conditions
   bp: "ضغط الدم",
@@ -76,6 +75,11 @@ export default function BookingDetailsPage() {
     confirmed: "bg-green-500/20 text-green-400",
     cancelled: "bg-red-500/20 text-red-400",
   };
+  const statusLabel: Record<string, string> = {
+  pending: "قيد الانتظار",
+  confirmed: "مؤكد",
+  cancelled: "ملغي",
+};
 
   return (
     <div className="min-h-screen bg-[#07111f] text-white p-6">
@@ -134,33 +138,88 @@ export default function BookingDetailsPage() {
 
             {/* MEDICAL */}
             <div className="rounded-3xl bg-white/5 border border-white/10 p-6">
-              <h2 className="text-xl font-bold mb-5">
-                🩺 البيانات الطبية
-              </h2>
+  <h2 className="text-xl font-bold mb-5">
+    🩺 البيانات الطبية
+  </h2>
 
-              <div className="space-y-4">
+  <div className="grid md:grid-cols-2 gap-4 mb-6">
 
-                <TextBlock
-                  title="الشكوى الرئيسية"
-                  value={formatMedicalList(booking.complaints)}
-                />
+    <Info
+      title="الجنس"
+      value={
+        booking.gender === "male"
+          ? "ذكر"
+          : booking.gender === "female"
+          ? "أنثى"
+          : "—"
+      }
+    />
 
-                <TextBlock
-                  title="التاريخ المرضي"
-                  value={formatMedicalList(booking.conditions)}
-                />
+    <Info
+      title="نوع التأهيل"
+      value={
+        booking.rehab_timing === "before"
+          ? "تأهيل قبل العملية"
+          : booking.rehab_timing === "after"
+          ? "تأهيل بعد العملية"
+          : "غير محدد"
+      }
+    />
 
-                <TextBlock
-                  title="أهداف الجلسة"
-                  value={formatMedicalList(booking.goals)}
-                />
+    <Info
+      title="أدوية سيولة الدم"
+      value={booking.blood_thinner ? "نعم" : "لا"}
+    />
 
-                <TextBlock
-                  title="ملاحظات"
-                  value={booking.notes}
-                />
-              </div>
-            </div>
+    <Info
+      title="مستوى الألم"
+      value={booking.pain_level ?? "غير محدد"}
+    />
+
+    <Info
+      title="مكان الإصابة"
+      value={booking.injury_location ?? "غير محدد"}
+    />
+
+    <Info
+      title="رقم الحجز"
+      value={booking.booking_ref}
+    />
+
+  </div>
+
+  <div className="space-y-4">
+
+    <TextBlock
+      title="نوع الإصابة"
+      value={formatMedicalList(booking.complaints)}
+    />
+
+    <TextBlock
+      title="التاريخ المرضي"
+      value={formatMedicalList(booking.conditions)}
+    />
+
+    <TextBlock
+      title="أهداف الجلسة"
+      value={formatMedicalList(booking.goals)}
+    />
+    <Info
+  title="سعر الجلسة"
+  value={`${booking.therapy_session?.price ?? 0} ر.س`}
+/>
+
+<Info
+  title="تاريخ إنشاء الحجز"
+  value={booking.created_at?.slice(0, 10)}
+/>
+
+    <TextBlock
+      title="ملاحظات"
+      value={booking.notes || "لا توجد ملاحظات"}
+    />
+  </div>
+</div>
           </div>
 
           {/* SIDEBAR */}
@@ -177,7 +236,8 @@ export default function BookingDetailsPage() {
                   "bg-gray-500/20 text-gray-400"
                 }`}
               >
-                {booking.status}
+                      {statusLabel[booking.status] || booking.status}    
+                      
               </span>
 
               <div className="mt-6">
@@ -204,10 +264,12 @@ export default function BookingDetailsPage() {
               </h3>
 
               <div className="space-y-3">
-                <Info title="الاسم" value={booking.user?.name} />
-                <Info title="البريد" value={booking.user?.email} />
-                <Info title="الهاتف" value={booking.user?.phone} />
-              </div>
+                <Info title="الاسم" value={booking.user?.name ?? "غير محدد" } />
+                <Info title="البريد" value={booking.user?.email ?? "غير محدد" } />
+                <Info title="الهاتف" value={booking.user?.phone ?? "غير محدد"} />
+                <Info title="العمر" value={booking.user?.age ?? "غير محدد"} />
+               <Info title="الوزن" value={booking.user?.weight ?? "غير محدد"} />
+               </div>
             </div>
 
           </div>

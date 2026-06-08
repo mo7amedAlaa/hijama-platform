@@ -5,36 +5,45 @@ import { StepIndicator }  from "../../components/booking/StepIndicator";
 import { SessionCard }    from "../../components/booking/SessionCard";
 import { SlotPicker }     from "../../components/booking/SlotPicker";
 import { BookingSuccess } from "../../components/booking/BookingSuccess";
-import { useSessions, useCreateBooking  } from "../../hooks/useBooking";
+import { useSessions, useCreateBooking } from "../../hooks/useBooking";
 import type { TherapySession, GeneratedSlot, MedicalForm } from "../../types";
 
-// ─── Step labels ─────────────────────────────────────────────
+// ─── Step labels ──────────────────────────────────────────────
 const STEPS = ["الخدمة", "الموعد", "بياناتك", "التأكيد"] as const;
 
-// ─── Complaint / condition / goal options ────────────────────
+// ─── 1. الشكاوى المحدّثة ──────────────────────────────────────
 const COMPLAINTS = [
-  { id:"lower_back",    label:"آلام أسفل الظهر" },
-  { id:"neck",          label:"آلام الرقبة" },
-  { id:"shoulder",      label:"آلام الكتف" },
-  { id:"knee",          label:"آلام الركبة" },
-  { id:"muscle_strain", label:"شد عضلي" },
-  { id:"disc",          label:"انزلاق غضروفي" },
-  { id:"other",         label:"أخرى" },
-];
-const CONDITIONS = [
-  { id:"bp",    label:"ضغط دم" }, { id:"sugar",  label:"سكر" },
-  { id:"heart", label:"أمراض قلب" }, { id:"anemia", label:"أنيميا" },
-  { id:"none",  label:"لا يوجد" },
-];
-const GOALS = [
-  { id:"pain",        label:"تخفيف الألم" },
-  { id:"mobility",    label:"زيادة الحركة" },
-  { id:"recovery",    label:"الاستشفاء" },
-  { id:"performance", label:"تحسين الأداء" },
-  { id:"relax",       label:"الاسترخاء" },
+  { id: "spine",          label: "إصابات العمود الفقري" },
+  { id: "shoulder",       label: "إصابات الكتف"         },
+  { id: "elbow_wrist",    label: "إصابات المرفق والرسغ" },
+  { id: "pelvis_thigh",   label: "إصابات الحوض والفخذ"  },
+  { id: "knee",           label: "إصابات الركبة"         },
+  { id: "leg_ankle_foot", label: "إصابات الساق والكاحل والقدم" },
 ];
 
-// ─── Small reusable UI ───────────────────────────────────────
+const CONDITIONS = [
+  { id:"bp",    label:"ضغط دم"    },
+  { id:"sugar", label:"سكر"       },
+  { id:"heart", label:"أمراض قلب" },
+  { id:"anemia",label:"أنيميا"    },
+  { id:"none",  label:"لا يوجد"   },
+];
+
+const GOALS = [
+  { id:"pain",        label:"تخفيف الألم"   },
+  { id:"mobility",    label:"زيادة الحركة"  },
+  { id:"recovery",    label:"الاستشفاء"     },
+  { id:"performance", label:"تحسين الأداء"  },
+  { id:"relax",       label:"الاسترخاء"     },
+];
+
+// ─── MedicalForm type مُوسَّع ─────────────────────────────────
+// أضف هذه الحقول في src/types/index.ts
+// rehab_timing: "before" | "after" | ""
+// gender: "male" | "female" | ""
+// blood_thinner: boolean
+
+// ─── UI Helpers ───────────────────────────────────────────────
 interface ErrorBannerProps { msg: string | null; onClose: () => void; }
 function ErrorBanner({ msg, onClose }: ErrorBannerProps) {
   if (!msg) return null;
@@ -60,7 +69,7 @@ interface CheckChipProps { label: string; checked: boolean; onToggle: () => void
 function CheckChip({ label, checked, onToggle }: CheckChipProps) {
   return (
     <button type="button" onClick={onToggle}
-      className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all
+      className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all active:scale-95
         ${checked
           ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-400"
           : "bg-white/5 border-white/10 text-gray-400 hover:border-white/25"}`}>
@@ -69,11 +78,57 @@ function CheckChip({ label, checked, onToggle }: CheckChipProps) {
   );
 }
 
-// ─── Step 2: Medical form ─────────────────────────────────────
-interface MedicalFormProps {
-  form: MedicalForm;
-  onChange: <K extends keyof MedicalForm>(field: K, val: MedicalForm[K]) => void;
+// Radio option
+interface RadioOptionProps { label: string; value: string; current: string; onChange: (v: string) => void; }
+function RadioOption({ label, value, current, onChange }: RadioOptionProps) {
+  const selected = current === value;
+  return (
+    <button type="button" onClick={() => onChange(value)}
+      className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm font-semibold transition-all active:scale-95 flex-1
+        ${selected
+          ? "bg-emerald-500/15 border-emerald-500/50 text-emerald-400"
+          : "bg-white/5 border-white/10 text-gray-400 hover:border-white/25"}`}>
+      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all
+        ${selected ? "border-emerald-500" : "border-gray-600"}`}>
+        {selected && <div className="w-2 h-2 rounded-full bg-emerald-500" />}
+      </div>
+      {label}
+    </button>
+  );
 }
+
+// Toggle switch
+interface ToggleProps { label: string; desc?: string; checked: boolean; onChange: (v: boolean) => void; }
+function Toggle({ label, desc, checked, onChange }: ToggleProps) {
+  return (
+    <div className={`flex items-center justify-between gap-4 p-4 rounded-xl border transition-all
+      ${checked ? "bg-red-500/8 border-red-500/25" : "bg-white/5 border-white/10"}`}>
+      <div>
+        <p className="text-sm font-semibold text-white">{label}</p>
+        {desc && <p className="text-xs text-gray-500 mt-0.5">{desc}</p>}
+      </div>
+      <button type="button" onClick={() => onChange(!checked)}
+        className={`relative w-12 h-6 rounded-full transition-all duration-300 flex-shrink-0
+          ${checked ? "bg-red-500" : "bg-white/15"}`}>
+        <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all duration-300
+          ${checked ? "right-1" : "left-1"}`} />
+      </button>
+    </div>
+  );
+}
+
+// ─── Step 2: Medical form ──────────────────────────────────────
+interface ExtendedMedicalForm extends MedicalForm {
+  rehab_timing:  "before" | "after" | "";
+  gender:        "male"   | "female" | "";
+  blood_thinner: boolean;
+}
+
+interface MedicalFormProps {
+  form: ExtendedMedicalForm;
+  onChange: <K extends keyof ExtendedMedicalForm>(field: K, val: ExtendedMedicalForm[K]) => void;
+}
+
 function MedicalFormStep({ form, onChange }: MedicalFormProps) {
   const toggle = (field: "complaints" | "conditions" | "goals", id: string) => {
     const current = form[field] as string[];
@@ -82,28 +137,95 @@ function MedicalFormStep({ form, onChange }: MedicalFormProps) {
 
   return (
     <div className="space-y-6">
-      {[
-        { label:"الشكوى الرئيسية", field:"complaints" as const, opts: COMPLAINTS },
-        { label:"التاريخ المرضي",  field:"conditions" as const, opts: CONDITIONS },
-        { label:"أهداف الجلسة",    field:"goals"      as const, opts: GOALS },
-      ].map(({ label, field, opts }) => (
-        <div key={field}>
-          <p className="text-xs text-gray-500 mb-3">{label}</p>
-          <div className="flex flex-wrap gap-2">
-            {opts.map(o => (
-              <CheckChip key={o.id} label={o.label}
-                checked={(form[field] as string[]).includes(o.id)}
-                onToggle={() => toggle(field, o.id)} />
-            ))}
-          </div>
+
+      {/* ── 3. الجنس ── */}
+      <div>
+        <p className="text-xs text-gray-500 mb-3 font-semibold">الجنس *</p>
+        <div className="flex gap-3">
+          <RadioOption label="👨 ذكر"  value="male"   current={form.gender} onChange={v => onChange("gender", v as "male"|"female"|"")} />
+          <RadioOption label="👩 أنثى" value="female" current={form.gender} onChange={v => onChange("gender", v as "male"|"female"|"")} />
         </div>
-      ))}
+      </div>
+
+      {/* ── 1. الشكوى ── */}
+      <div>
+        <p className="text-xs text-gray-500 mb-3 font-semibold">الشكوى الرئيسية</p>
+        <div className="flex flex-wrap gap-2">
+          {COMPLAINTS.map(o => (
+            <CheckChip key={o.id} label={o.label}
+              checked={form.complaints.includes(o.id)}
+              onToggle={() => toggle("complaints", o.id)} />
+          ))}
+        </div>
+      </div>
+
+      {/* ── 2. تأهيل قبل أم بعد عملية ── */}
+      <div>
+        <p className="text-xs text-gray-500 mb-3 font-semibold">التأهيل</p>
+        <div className="flex gap-3">
+          <RadioOption label="🔵 قبل العملية"  value="before" current={form.rehab_timing} onChange={v => onChange("rehab_timing", v as "before"|"after"|"")} />
+          <RadioOption label="🟢 بعد العملية"  value="after"  current={form.rehab_timing} onChange={v => onChange("rehab_timing", v as "before"|"after"|"")} />
+        </div>
+        {form.rehab_timing && (
+          <p className={`text-xs mt-2 px-3 py-2 rounded-lg border ${
+            form.rehab_timing === "before"
+              ? "text-blue-400 bg-blue-500/10 border-blue-500/20"
+              : "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+          }`}>
+            {form.rehab_timing === "before"
+              ? "✓ تأهيل ما قبل الجراحة — يهدف لتقوية العضلات وتحسين نطاق الحركة قبل التدخل الجراحي"
+              : "✓ تأهيل ما بعد الجراحة — يهدف للتعافي السريع واستعادة الوظيفة الكاملة"
+            }
+          </p>
+        )}
+      </div>
+
+      {/* ── التاريخ المرضي ── */}
+      <div>
+        <p className="text-xs text-gray-500 mb-3 font-semibold">التاريخ المرضي</p>
+        <div className="flex flex-wrap gap-2">
+          {CONDITIONS.map(o => (
+            <CheckChip key={o.id} label={o.label}
+              checked={form.conditions.includes(o.id)}
+              onToggle={() => toggle("conditions", o.id)} />
+          ))}
+        </div>
+      </div>
+
+      {/* ── 4. علاج سيولة الدم ── */}
+      <Toggle
+        label="علاج سيولة الدم (مضادات التخثر)"
+        desc="مثل: وارفارين، هيبارين، أسبرين جرعة عالية"
+        checked={form.blood_thinner}
+        onChange={v => onChange("blood_thinner", v)}
+      />
+
+      {form.blood_thinner && (
+        <div className="flex gap-3 bg-red-500/10 border border-red-500/25 rounded-xl px-4 py-3 text-xs text-red-400 leading-relaxed">
+          <span className="text-base flex-shrink-0">⚠️</span>
+          <span>
+            يرجى إخبار المتخصص بنوع الدواء وجرعته قبل الجلسة.
+            قد يحتاج الأمر لمراجعة الطبيب المشرف قبل بدء العلاج.
+          </span>
+        </div>
+      )}
+
+      {/* ── أهداف الجلسة ── */}
+      <div>
+        <p className="text-xs text-gray-500 mb-3 font-semibold">أهداف الجلسة</p>
+        <div className="flex flex-wrap gap-2">
+          {GOALS.map(o => (
+            <CheckChip key={o.id} label={o.label}
+              checked={form.goals.includes(o.id)}
+              onToggle={() => toggle("goals", o.id)} />
+          ))}
+        </div>
+      </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-xs text-gray-500 mb-2 block">مستوى الألم</label>
-          <select value={form.pain_level}
-            onChange={e => onChange("pain_level", e.target.value)}
+          <select value={form.pain_level} onChange={e => onChange("pain_level", e.target.value)}
             className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500/60">
             <option value="">اختر</option>
             <option value="1-3">1–3 خفيف</option>
@@ -113,8 +235,7 @@ function MedicalFormStep({ form, onChange }: MedicalFormProps) {
         </div>
         <div>
           <label className="text-xs text-gray-500 mb-2 block">مكان الإصابة</label>
-          <input value={form.injury_location}
-            onChange={e => onChange("injury_location", e.target.value)}
+          <input value={form.injury_location} onChange={e => onChange("injury_location", e.target.value)}
             placeholder="مثال: الركبة اليمنى"
             className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500/60" />
         </div>
@@ -122,8 +243,7 @@ function MedicalFormStep({ form, onChange }: MedicalFormProps) {
 
       <div>
         <label className="text-xs text-gray-500 mb-2 block">ملاحظات إضافية (اختياري)</label>
-        <textarea value={form.notes}
-          onChange={e => onChange("notes", e.target.value)}
+        <textarea value={form.notes} onChange={e => onChange("notes", e.target.value)}
           rows={3} placeholder="أي معلومات إضافية..."
           className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-emerald-500/60 resize-none" />
       </div>
@@ -134,74 +254,141 @@ function MedicalFormStep({ form, onChange }: MedicalFormProps) {
 // ─── Step 3: Review ───────────────────────────────────────────
 interface ReviewProps {
   session: TherapySession | null;
-  slot: GeneratedSlot | null;
-  date: string;
-  medForm: MedicalForm;
+  slot:    GeneratedSlot  | null;
+  date:    string;
+  medForm: ExtendedMedicalForm;
 }
+
 function ReviewStep({ session, slot, date, medForm }: ReviewProps) {
+  // deadline = اليوم + 7 أيام
+  const deadline = new Date();
+  deadline.setDate(deadline.getDate() + 7);
+  const deadlineStr = deadline.toLocaleDateString("ar-EG", {
+    day: "numeric", month: "long", year: "numeric",
+  });
+
+  const genderLabel = medForm.gender === "male" ? "ذكر" : medForm.gender === "female" ? "أنثى" : undefined;
+  const rehabLabel  = medForm.rehab_timing === "before" ? "قبل العملية" : medForm.rehab_timing === "after" ? "بعد العملية" : undefined;
+
   const rows = [
-    { label:"الخدمة",       val: session?.name_ar },
-    { label:"التاريخ",      val: date },
-    { label:"الوقت",        val: slot?.start_time?.slice(0, 5) },
-    { label:"السعر",        val: session ? `${session.price} ر.س` : undefined },
-    { label:"مستوى الألم",  val: medForm.pain_level  || undefined },
-    { label:"مكان الإصابة", val: medForm.injury_location || undefined },
+    { label:"الخدمة",         val: session?.name_ar },
+    { label:"التاريخ",        val: date },
+    { label:"الوقت",          val: slot?.start_time?.slice(0, 5) },
+    { label:"السعر",          val: session ? `${session.price} ر.س` : undefined },
+    { label:"الجنس",          val: genderLabel },
+    { label:"التأهيل",        val: rehabLabel },
+    { label:"سيولة الدم",     val: medForm.blood_thinner ? "يتناول علاج سيولة" : undefined },
+    { label:"مستوى الألم",    val: medForm.pain_level || undefined },
+    { label:"مكان الإصابة",   val: medForm.injury_location || undefined },
   ];
+
   return (
     <div className="space-y-4">
+
+      {/* ملخص البيانات */}
       <div className="bg-emerald-500/8 border border-emerald-500/25 rounded-2xl p-5 space-y-3">
-        {rows.map(r => (
+        {rows.filter(r => r.val).map(r => (
           <div key={r.label} className="flex justify-between text-sm">
             <span className="text-gray-500">{r.label}</span>
-            <span className="text-white font-semibold">{r.val ?? "—"}</span>
+            <span className="text-white font-semibold">{r.val}</span>
           </div>
         ))}
       </div>
+
+      {/* الشكاوى */}
       {medForm.complaints.length > 0 && (
         <div>
           <p className="text-xs text-gray-500 mb-2">الشكاوى المحددة</p>
           <div className="flex flex-wrap gap-1.5">
-            {medForm.complaints.map(c => (
-              <span key={c} className="px-2 py-1 bg-white/8 border border-white/10 rounded-lg text-xs text-gray-300">{c}</span>
-            ))}
+            {medForm.complaints.map(c => {
+              const found = COMPLAINTS.find(x => x.id === c);
+              return (
+                <span key={c} className="px-2 py-1 bg-white/8 border border-white/10 rounded-lg text-xs text-gray-300">
+                  {found?.label ?? c}
+                </span>
+              );
+            })}
           </div>
         </div>
       )}
-      <div className="bg-amber-500/8 border border-amber-500/25 rounded-xl p-3 text-xs text-amber-400 leading-relaxed">
-        ⚠️ بالضغط على "تأكيد الحجز" توافق على شروط المركز. يُرجى الحضور قبل ١٠ دقائق من الموعد.
+
+      {/* ── 5. تنبيه الدفع ── */}
+      <div className="bg-amber-500/10 border-2 border-amber-500/40 rounded-2xl p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">💳</span>
+          <p className="text-sm font-black text-amber-400">تأكيد الحجز يستلزم الدفع المسبق</p>
+        </div>
+        <div className="bg-amber-500/15 rounded-xl px-4 py-3">
+          <p className="text-sm text-white font-bold text-center">
+            يرجى تحويل مبلغ <span className="text-amber-400 text-lg font-black">100 ج.م</span>
+          </p>
+          <p className="text-xs text-gray-400 text-center mt-1">كعربون لتأكيد الحجز</p>
+        </div>
+        <div className="space-y-1.5 text-xs text-gray-400">
+          <div className="flex items-center gap-2">
+            <span>📱</span>
+            <span>رقم الحوالة: <span className="text-white font-bold">٠١٠٠٤٦٥٥٧٨٣</span></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span>🏦</span>
+            <span>اسم البنك: <span className="text-white font-bold">Vodafone Cash</span></span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span>📅</span>
+            <span>
+              آخر موعد للتحويل:{" "}
+              <span className="text-amber-400 font-bold">{deadlineStr}</span>
+            </span>
+          </div>
+        </div>
+        <div className="flex gap-2 bg-red-500/10 border border-red-500/20 rounded-xl p-2.5 text-xs text-red-400">
+          <span>⚠️</span>
+          <span>سيتم إلغاء الحجز تلقائياً في حال عدم التحويل خلال المدة المحددة.</span>
+        </div>
+      </div>
+
+      {/* الموافقة على الشروط */}
+      <div className="bg-white/4 border border-white/10 rounded-xl p-3 text-xs text-gray-500 leading-relaxed">
+        بالضغط على "تأكيد الحجز" توافق على شروط وأحكام المركز، وتُقرّ بصحة البيانات المدخلة.
+        يُرجى الحضور قبل ١٠ دقائق من الموعد.
       </div>
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────
-// MAIN PAGE
-// ─────────────────────────────────────────────────────────────
+// ─── MAIN PAGE ────────────────────────────────────────────────
 export default function BookingPage() {
   const navigate = useNavigate();
-
-  const [step, setStep] = useState<number>(0);
+  const [step, setStep]           = useState<number>(0);
   const [selectedSession, setSelectedSession] = useState<TherapySession | null>(null);
   const [selectedDate,    setSelectedDate]    = useState<string>("");
   const [selectedSlot,    setSelectedSlot]    = useState<GeneratedSlot | null>(null);
-  const [medForm, setMedForm] = useState<MedicalForm>({
-    complaints: [], conditions: [], goals: [],
-    pain_level: "", injury_location: "", notes: "",
+
+  const [medForm, setMedForm] = useState<ExtendedMedicalForm>({
+    complaints:    [],
+    conditions:    [],
+    goals:         [],
+    pain_level:    "",
+    injury_location: "",
+    notes:         "",
+    rehab_timing:  "",
+    gender:        "",
+    blood_thinner: false,
   });
 
-  // مش محتاج useSlots هنا — SlotPicker بيجيب المواعيد بنفسه
   const { sessions, loading: loadingSessions, error: sessionsErr, fetch: fetchSessions } = useSessions();
   const { booking,  loading: submitting,      error: submitErr,   create }               = useCreateBooking();
   const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => { fetchSessions(); }, [fetchSessions]);
-  
-  const updateMed = <K extends keyof MedicalForm>(field: K, val: MedicalForm[K]) =>
+
+  const updateMed = <K extends keyof ExtendedMedicalForm>(field: K, val: ExtendedMedicalForm[K]) =>
     setMedForm(f => ({ ...f, [field]: val }));
 
   const canNext = (): boolean => {
     if (step === 0) return !!selectedSession;
     if (step === 1) return !!selectedSlot;
+    if (step === 2) return !!medForm.gender; // الجنس إجباري
     return true;
   };
 
@@ -211,47 +398,45 @@ export default function BookingPage() {
   const handleSubmit = async () => {
     if (!selectedSession || !selectedSlot) return;
     setLocalError(null);
-   try {
+    try {
       await create({
         therapy_session_id: selectedSession.id,
-
-         appointment_start: selectedSlot.start_time.slice(0, 5),
-
-        appointment_date: selectedSlot.date,
-        complaints: medForm.complaints,
-        conditions: medForm.conditions,
-        goals: medForm.goals,
-        pain_level: medForm.pain_level || undefined,
-        injury_location: medForm.injury_location || undefined,
-        notes: medForm.notes || undefined,
+        appointment_start:  selectedSlot.start_time.slice(0, 5),
+        appointment_date:   selectedSlot.date,
+        complaints:         medForm.complaints,
+        conditions:         medForm.conditions,
+        goals:              medForm.goals,
+        pain_level:         medForm.pain_level    || undefined,
+        injury_location:    medForm.injury_location || undefined,
+        notes:              medForm.notes          || undefined,
+        // حقول جديدة
+        gender:             medForm.gender         || undefined,
+        rehab_timing:       medForm.rehab_timing   || undefined,
+        blood_thinner:      medForm.blood_thinner,
       });
-
       setStep(4);
     } catch {
-      // error lives in submitErr from the hook
+      // submitErr من الـ hook
     }
   };
 
   const handleReset = () => {
-    setStep(0);
-    setSelectedSession(null);
-    setSelectedDate("");
-    setSelectedSlot(null);
-    setMedForm({ complaints:[], conditions:[], goals:[], pain_level:"", injury_location:"", notes:"" });
+    setStep(0); setSelectedSession(null);
+    setSelectedDate(""); setSelectedSlot(null);
+    setMedForm({
+      complaints:[], conditions:[], goals:[],
+      pain_level:"", injury_location:"", notes:"",
+      rehab_timing:"", gender:"", blood_thinner: false,
+    });
   };
 
   const stepTitles = ["اختر الخدمة","حدد الموعد","بياناتك الصحية","مراجعة وتأكيد"];
 
-  // ── Success ───────────────────────────────────────────────
   if (step === 4) {
     return (
       <div className="min-h-screen bg-[#070D1A] flex items-center justify-center p-4">
         <div className="w-full max-w-md bg-[#0E1628] border border-white/8 rounded-3xl overflow-hidden">
-          <BookingSuccess
-            booking={booking}
-            onNewBooking={handleReset}
-            onViewBookings={() => navigate("/profile")}
-          />
+          <BookingSuccess booking={booking} onNewBooking={handleReset} onViewBookings={() => navigate("/profile")} />
         </div>
       </div>
     );
@@ -259,7 +444,6 @@ export default function BookingPage() {
 
   return (
     <div className="min-h-screen bg-[#070D1A] flex items-center justify-center p-4">
-      {/* bg orbs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 right-1/4 w-96 h-96 rounded-full bg-emerald-500/5 blur-3xl" />
         <div className="absolute bottom-1/4 left-1/4 w-64 h-64 rounded-full bg-amber-500/5 blur-3xl" />
@@ -282,22 +466,16 @@ export default function BookingPage() {
                 <p className="text-xs text-gray-500 mt-0.5">الخطوة {step + 1} من {STEPS.length}</p>
               </div>
             </div>
-            {/* Progress */}
             <div className="h-1 bg-white/5 rounded-full mt-4 mb-1 overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-l from-emerald-500 to-emerald-400 rounded-full transition-all duration-500"
-                style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
-              />
+              <div className="h-full bg-gradient-to-l from-emerald-500 to-emerald-400 rounded-full transition-all duration-500"
+                style={{ width:`${((step+1)/STEPS.length)*100}%` }} />
             </div>
             <StepIndicator steps={[...STEPS]} current={step} />
           </div>
 
           {/* Body */}
           <div className="px-6 pb-6 max-h-[60vh] overflow-y-auto">
-            <ErrorBanner
-              msg={localError ?? sessionsErr ?? submitErr}
-              onClose={() => setLocalError(null)}
-            />
+            <ErrorBanner msg={localError ?? sessionsErr ?? submitErr} onClose={() => setLocalError(null)} />
 
             {step === 0 && (
               <div className="space-y-3">
@@ -307,34 +485,23 @@ export default function BookingPage() {
                     <SessionCard key={s.id} session={s}
                       selected={selectedSession?.id === s.id}
                       onSelect={setSelectedSession} />
-                  ))
-                }
+                  ))}
               </div>
             )}
 
             {step === 1 && (
               <SlotPicker
                 date={selectedDate}
-                onDateChange={(d) => {
-                  setSelectedDate(d);
-                  setSelectedSlot(null);
-                }}
+                onDateChange={(d) => { setSelectedDate(d); setSelectedSlot(null); }}
                 selectedSlot={selectedSlot}
-                onSlotSelect={(s) => {
-                  if (s.is_available) setSelectedSlot(s);
-                }}
+                onSlotSelect={(s) => { if (s.is_available) setSelectedSlot(s); }}
               />
             )}
 
             {step === 2 && <MedicalFormStep form={medForm} onChange={updateMed} />}
 
             {step === 3 && (
-              <ReviewStep
-                session={selectedSession}
-                slot={selectedSlot}
-                date={selectedDate}
-                medForm={medForm}
-              />
+              <ReviewStep session={selectedSession} slot={selectedSlot} date={selectedDate} medForm={medForm} />
             )}
           </div>
 
@@ -352,7 +519,7 @@ export default function BookingPage() {
               <button onClick={handleSubmit} disabled={submitting}
                 className="w-full py-4 rounded-2xl font-bold text-sm bg-gradient-to-r from-emerald-500 to-emerald-600 text-black hover:-translate-y-0.5 shadow-lg shadow-emerald-500/30 transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                 {submitting
-                  ? <><span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" /> جارٍ الحجز...</>
+                  ? <><span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />جارٍ الحجز...</>
                   : "✓ تأكيد الحجز"
                 }
               </button>
@@ -366,9 +533,7 @@ export default function BookingPage() {
             <span className="text-base">🏥</span>
             <span className="font-semibold text-white">{selectedSession.name_ar}</span>
             {selectedDate && <><span>·</span><span>{selectedDate}</span></>}
-            {selectedSlot && (
-              <><span>·</span><span className="text-emerald-400 font-bold">{selectedSlot.start_time.slice(0, 5)}</span></>
-            )}
+            {selectedSlot && <><span>·</span><span className="text-emerald-400 font-bold">{selectedSlot.start_time.slice(0, 5)}</span></>}
           </div>
         )}
       </div>

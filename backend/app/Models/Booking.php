@@ -15,6 +15,9 @@ class Booking extends Model
         'complaints', 'conditions', 'goals',
         'pain_level', 'injury_location',
         'appointment_start', 'appointment_end',
+         'gender',
+        'rehab_timing',
+        'blood_thinner',
 
     ];
 
@@ -23,6 +26,8 @@ class Booking extends Model
         'conditions'       => 'array',
         'goals'            => 'array',
         'appointment_date' => 'date',
+        'blood_thinner' => 'boolean',
+
     ];
 
     protected static function booted(): void

@@ -2,8 +2,8 @@
 import { motion } from "framer-motion";
 
 const WhatsAppButton = () => {
-  const phone = "201234567890"; // غيّر الرقم بتاعك
-
+  const phone = "201031830595"; // غيّر الرقم بتاعك
+ 
   return (
     <motion.a
       href={`https://wa.me/${phone}`}
