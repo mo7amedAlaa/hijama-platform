@@ -26,30 +26,42 @@ class TherapySessionController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'             => 'required|string',
-            'name_ar'          => 'required|string',
-            'description'      => 'nullable|string',
-            'duration_minutes' => 'integer|min:15',
-            'price'            => 'numeric|min:0',
-        ]);
-
+    'name'             => 'required|string',
+    'name_ar'          => 'required|string',
+    'description'      => 'nullable|string',
+    'duration_minutes' => 'integer|min:15',
+    'price'            => 'numeric|min:0',
+    'icon'             => 'nullable',
+]);
+        if ($request->hasFile('icon')) {
+    $path = $request->file('icon')->store('sessions', 'public');
+    $data['icon'] = $path;
+}
         return response()->json(TherapySession::create($data), 201);
     }
 
     // PUT /api/sessions/{id}  (Admin فقط)
     public function update(Request $request, TherapySession $therapySession)
-    {
-        $therapySession->update($request->validate([
-            'name'             => 'sometimes|string',
-            'name_ar'          => 'sometimes|string',
-            'description'      => 'nullable|string',
-            'duration_minutes' => 'sometimes|integer|min:15',
-            'price'            => 'sometimes|numeric|min:0',
-            'is_active'        => 'sometimes|boolean',
-        ]));
+{
+    $data = $request->validate([
+        'name'             => 'sometimes|string',
+        'name_ar'          => 'sometimes|string',
+        'description'      => 'nullable|string',
+        'duration_minutes' => 'sometimes|integer|min:15',
+        'price'            => 'sometimes|numeric|min:0',
+        'is_active'        => 'sometimes|boolean',
+        'icon'             => 'nullable',
+    ]);
 
-        return response()->json($therapySession);
+    if ($request->hasFile('icon')) {
+        $path = $request->file('icon')->store('sessions', 'public');
+        $data['icon'] = $path;
     }
+
+    $therapySession->update($data);
+
+    return response()->json($therapySession);
+}
 
     public function destroy(TherapySession $therapySession)
     {

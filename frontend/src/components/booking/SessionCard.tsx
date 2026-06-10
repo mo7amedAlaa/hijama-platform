@@ -15,7 +15,12 @@ export function SessionCard({ session, selected, onSelect }) {
       <div className="flex items-start gap-4">
         <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0
           ${selected ? "bg-emerald-500/20 border border-emerald-500/40" : "bg-white/8 border border-white/10"}`}>
-          {icon}
+            {
+              session.icon
+                ? <img  src={session.icon_url} alt={session.name_ar} className="w-full h-full rounded-xl object-cover" />
+                : <span className="text-2xl font-bold">{session.name_ar.slice(0, 1).toUpperCase()}</span>
+            }
+          
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-2 mb-1">

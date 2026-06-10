@@ -190,6 +190,7 @@ export interface TherapySession {
   duration_minutes: number;
   price: number;
   is_active: boolean;
+  icon: string | null
   created_at: string;
   updated_at: string;
 }
