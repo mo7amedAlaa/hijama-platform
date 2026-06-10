@@ -41,9 +41,7 @@ const STATUS_CFG: Record<BookingStatus, { label: string; tw: string }> = {
   cancelled: { label: "ملغاة",  tw: "bg-red-500/15    text-red-400    border-red-500/30"     },
 };
 
-const SESSION_ICONS: Record<number, string> = { 1: "🩸", 2: "💆", 3: "✨", 4: "🏃", 5: "🦾", 6: "🧘" };
-const DAYS_AR = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
-
+ const DAYS_AR = ["الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"];
 const NAV: { id: AdminView; label: string; icon: string }[] = [
   { id: "overview",      label: "عام",       icon: "📊" },
   { id: "bookings",      label: "حجوزات",    icon: "📅" },
@@ -52,8 +50,6 @@ const NAV: { id: AdminView; label: string; icon: string }[] = [
   { id: "sessions",      label: "خدمات",     icon: "🏥" },
   { id: "schedule",      label: "جدول",      icon: "🗓" },
 ];
-
-const QUICK_EMOJIS = ["🩸","💆","✨","🏃","🦾","🧘","🏥","💉","🌿","🔬","💊","🫁","🧬","🩺","🌡️","💪","🫀","🦷","👁️","🤲"];
 
 // ─── Tiny UI helpers ──────────────────────────────────────────
 const Skeleton = ({ cls = "" }: { cls?: string }) => (
@@ -352,7 +348,7 @@ function BookingsView({
                         <div className="text-xs text-gray-500">{b.user?.phone ?? ""}</div>
                       </td>
                       <td className="px-4 py-3 text-gray-300 text-xs whitespace-nowrap">
-                        {SESSION_ICONS[b.therapy_session_id] ?? ""} {b.therapy_session?.name_ar ?? "—"}
+                          {b.therapy_session?.name_ar ?? "—"}
                       </td>
                       <td className="px-4 py-3 text-gray-400 text-xs whitespace-nowrap">
                         {b.appointment_date?.slice(0, 10)}<br />{b.appointment_start?.slice(0, 5)}
@@ -476,8 +472,6 @@ function UsersView({ users, loading, bookings }: { users: User[]; loading: boole
 // 4. SESSIONS — إضافة + تعديل + حذف + تفعيل/تعطيل
 // ──────────────────────────────────────────────────────────────
 
-type IconMode = "upload" ;
-
 interface SessionFormData {
   name: string;
   name_ar: string;
@@ -486,7 +480,6 @@ interface SessionFormData {
   price: number;
   is_active: boolean;
   iconFile: File | null;
-  iconEmoji: string;
 }
 
 const EMPTY_FORM: SessionFormData = {
@@ -497,7 +490,6 @@ const EMPTY_FORM: SessionFormData = {
   price: 0,
   is_active: true,
   iconFile: null,
-  
 };
 
 // Icon picker shared component
@@ -533,7 +525,7 @@ function IconPicker({
           </label>
           {(iconPreview || existingIcon) && (
             <img
-              src={iconPreview ?? existingIcon ?? ""}
+              src={iconPreview   ?? existingIcon ?? ""}
               alt="preview"
               className="w-14 h-14 rounded-xl object-cover border border-white/15 flex-shrink-0 shadow-lg"
             />
@@ -595,14 +587,13 @@ function SessionsView({
   // ── Add state ──
   const [showAdd, setShowAdd]         = useState(false);
   const [addForm, setAddForm]         = useState<SessionFormData>(EMPTY_FORM);
-  const [addMode, setAddMode]         = useState<IconMode>("upload");
   const [addPreview, setAddPreview]   = useState<string | null>(null);
   const [addSaving, setAddSaving]     = useState(false);
 
   // ── Edit state ──
   const [editing, setEditing]         = useState<TherapySession | null>(null);
   const [editForm, setEditForm]       = useState<SessionFormData>(EMPTY_FORM);
-  const [editMode, setEditMode]       = useState<IconMode>("upload");
+
   const [editPreview, setEditPreview] = useState<string | null>(null);
   const [editSaving, setEditSaving]   = useState(false);
 
@@ -625,7 +616,7 @@ function SessionsView({
   };
 
   const handleAdd = async () => {
-    if (!addForm.name_ar || !addForm.price) return;
+    if (!addForm.name_ar || !addForm.price ) return;
     setAddSaving(true);
     try {
       await onCreate(buildFormData(addForm));
@@ -639,9 +630,6 @@ function SessionsView({
 
   const openEdit = (s: TherapySession) => {
     setEditing(s);
-    // Detect if stored icon looks like an emoji (short string, no slash)
-    const isEmoji = s.icon && s.icon.length <= 2 && !s.icon.includes("/");
-    setEditMode("upload");
     setEditForm({
       name:             s.name ?? "",
       name_ar:          s.name_ar ?? "",
@@ -649,8 +637,7 @@ function SessionsView({
       duration_minutes: s.duration_minutes ?? 60,
       price:            s.price ?? 0,
       is_active:        s.is_active,
-      iconFile:         null,
-      iconEmoji:        isEmoji ? (s.icon ?? "") : "",
+      iconFile:         s.icon_file ?? null,
     });
     setEditPreview(null);
   };
@@ -659,7 +646,7 @@ function SessionsView({
     if (!editing) return;
     setEditSaving(true);
     try {
-      await onUpdate(editing.id, buildFormData(editForm, editMode));
+      await onUpdate(editing.id, buildFormData(editForm));
       setEditing(null);
       setEditPreview(null);
     } finally {
@@ -669,7 +656,7 @@ function SessionsView({
 
   // Render icon preview in card
   const renderCardIcon = (s: TherapySession) => {
-    if (!s.icon) return <span>🏥</span>;
+    if (!s.icon) return <span>{s.name_ar.slice(0, 1).toUpperCase()}</span>;
     if (s.icon.length <= 2 && !s.icon.includes("/")) return <span className="text-xl">{s.icon}</span>;
     return <img src={s.icon_url} alt={s.name_ar} className="w-6 h-6 object-contain" />;
   };
@@ -716,13 +703,9 @@ function SessionsView({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <SessionFormFields form={addForm} onChange={updateAddForm} />
             <IconPicker
-              mode={addMode}
-              onModeChange={setAddMode}
               iconFile={addForm.iconFile}
-              iconEmoji={addForm.iconEmoji}
               iconPreview={addPreview}
               onFileChange={(file, preview) => { updateAddForm("iconFile", file); setAddPreview(preview); }}
-              onEmojiChange={em => updateAddForm("iconEmoji", em)}
             />
           </div>
 
@@ -764,14 +747,11 @@ function SessionsView({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
             <SessionFormFields form={editForm} onChange={updateEditForm} />
             <IconPicker
-              mode={editMode}
-              onModeChange={setEditMode}
               iconFile={editForm.iconFile}
-              iconEmoji={editForm.iconEmoji}
               iconPreview={editPreview}
               existingIcon={editing.icon}
               onFileChange={(file, preview) => { updateEditForm("iconFile", file); setEditPreview(preview); }}
-              onEmojiChange={em => updateEditForm("iconEmoji", em)}
+              
             />
           </div>
 
