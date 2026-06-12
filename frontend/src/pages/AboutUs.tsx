@@ -14,11 +14,16 @@ export default function AboutUs() {
         initial={{ opacity: 0, y: -40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="bg-slate-900 text-white p-8 rounded-2xl shadow-xl relative overflow-hidden"
+        className="bg-slate-900 text-white p-8 rounded-2xl shadow-xl relative overflow-hidden text-justify"
       >
-        <h1 className="text-3xl font-bold">من نحن</h1>
-        <p className="text-gray-300 mt-2">
-          قصة، رؤية، ورسالة نبني بها الثقة قبل أي خدمة
+        <h1 className="text-3xl font-bold ">
+          مرحبًا بكم في
+          <span dir="ltr">CORE S+ </span>
+        </h1>
+
+        <p className="text-gray-300 mt-2 leading-relaxed">
+          مركز متخصص في الحجامة العلاجية، المساج العلاجي والاسترخائي، الريكافري
+          الرياضي، والتأهيل الحركي.
         </p>
 
         {/* Back Button */}
@@ -31,33 +36,33 @@ export default function AboutUs() {
       </motion.div>
 
       {/* Content */}
-      <div className="mt-8 space-y-6">
-
-        <Card title="قصتنا">
-          بدأنا بفكرة بسيطة: تقديم خدمات صحية تقليدية مثل الحجامة بشكل
-          احترافي، نظيف، ومبني على الثقة. ما بين التراث والطب الحديث،
-          قررنا نعيد تقديم الشيء القديم بطريقة حديثة.
-        </Card>
-
-        <Card title="رؤيتنا">
-          نؤمن أن الصحة مش رفاهية، بل أسلوب حياة. هدفنا نكون منصة موثوقة
-          تجمع بين الخبرة التقليدية والتقنيات الحديثة في الرعاية الصحية.
+      <div className="mt-8 space-y-6 text-justify">
+        <Card title="من نحن">
+          نحن مركز متخصص في تقديم خدمات علاجية متكاملة تعتمد على الدمج بين
+          الأساليب العلمية الحديثة والخبرة العملية في التعامل مع مختلف الحالات،
+          بدايةً من آلام العضلات والمفاصل وحتى إصابات الملاعب وبرامج التأهيل
+          والاستشفاء الرياضي.
         </Card>
 
         <Card title="رسالتنا">
-          تقديم خدمات آمنة، نظيفة، ومبنية على الوعي الطبي، مع احترام
-          احتياجات كل شخص بدون مبالغة أو وعود غير واقعية.
+          تقديم خدمات علاجية احترافية تساعد على تحسين الصحة، تخفيف الألم،
+          واستعادة النشاط والحيوية من خلال تقييم دقيق وخطط علاجية مخصصة لكل
+          حالة، بدون مبالغة أو وعود غير واقعية.
+        </Card>
+
+        <Card title="هدفنا">
+          توفير تجربة علاجية متكاملة تعتمد على المتابعة المستمرة والاهتمام
+          بالتفاصيل، لتحقيق أفضل نتائج ممكنة لكل عميل وفق احتياجاته الفردية.
         </Card>
 
         <Card title="قيمنا">
           <ul className="space-y-2 list-disc pr-5 marker:text-emerald-600">
-            <li>الشفافية بدون تجميل</li>
-            <li>النظافة قبل أي شيء</li>
-            <li>احترام العميل</li>
-            <li>الجمع بين التراث والعلم</li>
+            <li>الشفافية والوضوح بدون تجميل</li>
+            <li>النظافة والمعايير المهنية العالية</li>
+            <li>احترام احتياجات كل عميل</li>
+            <li>الدمج بين التراث والعلم الحديث</li>
           </ul>
         </Card>
-
       </div>
     </div>
   );
@@ -75,12 +80,8 @@ function Card({ title, children }) {
       transition={{ duration: 0.4 }}
       className="bg-white rounded-2xl shadow-md p-6 border-r-4 border-emerald-500"
     >
-      <h2 className="text-xl font-bold text-slate-800 mb-3">
-        {title}
-      </h2>
-      <div className="text-gray-700 leading-relaxed">
-        {children}
-      </div>
+      <h2 className="text-xl font-bold text-slate-800 mb-3">{title}</h2>
+      <div className="text-gray-700 leading-relaxed">{children}</div>
     </motion.div>
   );
 }

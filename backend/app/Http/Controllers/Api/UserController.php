@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Booking;
+use App\Models\TherapySession;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
@@ -63,4 +65,17 @@ public function deleteUser($id)
         'message' => 'تم الحذف بنجاح'
     ]);
 }
+ public function stats(Request $request)
+    {
+        //get users , sessions  , bookings
+        $users = User::count();
+        $sessions = TherapySession::count();
+        $bookings = Booking::count();
+
+        return response()->json([
+            'users' => $users,
+            'sessions' => $sessions,
+            'bookings' => $bookings
+        ]);
+    }
 }

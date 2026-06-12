@@ -27,6 +27,7 @@ Route::get('/user', function (Request $request) {
 Route::get('/sessions',      [TherapySessionController::class, 'index']);
 Route::get('/slots',         [SlotController::class, 'index']);
 Route::post('/slots/batch',  [SlotController::class, 'batch']);
+Route::get('/stats',   [UserController::class, 'stats']);
 Route::prefix('auth')->group(function () {
 
     Route::post('/register', RegisterController::class);

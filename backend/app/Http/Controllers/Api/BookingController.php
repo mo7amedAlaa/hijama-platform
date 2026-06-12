@@ -46,6 +46,12 @@ class BookingController extends Controller
     // ── POST /api/bookings ────────────────────────────────
 public function store(Request $request): JsonResponse
 {
+$request->merge([
+    'blood_thinner' => filter_var(
+        $request->blood_thinner,
+        FILTER_VALIDATE_BOOLEAN
+    )
+]);
     $data = $request->validate([
         'therapy_session_id' => 'required|exists:therapy_sessions,id',
         'appointment_date'   => 'required|date|after_or_equal:today',
@@ -82,10 +88,9 @@ public function store(Request $request): JsonResponse
 
         'rehab_timing.required' => 'وقت التأهيل مطلوب.',
         'rehab_timing.in'       => 'قيمة وقت التأهيل غير صحيحة.',
-
         'blood_thinner.required' => 'حقل مميعات الدم مطلوب.',
-        'blood_thinner.boolean'  => 'قيمة مميعات الدم يجب أن تكون صحيحة أو خاطئة.',
     ]);
+
 
     $session = \App\Models\TherapySession::findOrFail($data['therapy_session_id']);
     $duration = $session->duration_minutes;
@@ -107,7 +112,6 @@ public function store(Request $request): JsonResponse
     }
 
     $booking = DB::transaction(function () use ($data, $request) {
-
         $exists = Booking::whereIn('status', ['pending', 'confirmed'])
             ->where('appointment_date', $data['appointment_date'])
             ->where(function ($q) use ($data) {
@@ -116,7 +120,6 @@ public function store(Request $request): JsonResponse
             })
             ->lockForUpdate()
             ->exists();
-
         if ($exists) {
             return response()->json([
                 'message' => 'هذا الموعد محجوز بالفعل.',

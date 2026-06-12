@@ -1,14 +1,18 @@
 // src/services/api.ts
- 
+
 import type { AxiosResponse } from "axios";
 import type {
-  AuthResponse, LoginPayload, RegisterPayload,
-  TherapySession, Slot, Booking,
-  CreateBookingPayload, PaginatedResponse, User,
+  AuthResponse,
+  LoginPayload,
+  RegisterPayload,
+  TherapySession,
+  Slot,
+  Booking,
+  CreateBookingPayload,
+  PaginatedResponse,
+  User,
 } from "../types";
 import api from "../api/axios";
-
-
 
 // ────────────────────────────────────────────────────────────
 // Auth
@@ -23,23 +27,20 @@ export const authService = {
   logout: (): Promise<AxiosResponse<{ message: string }>> =>
     api.post("/logout"),
 
-  me: (): Promise<AxiosResponse<User>> =>
-    api.get("/me"),
+  me: (): Promise<AxiosResponse<User>> => api.get("/me"),
   updateProfile: (data: Partial<User>): Promise<AxiosResponse<User>> =>
     api.put("/me", data),
-   nextSession: async () => {
-  const res = await api.get("/me/next-session");
-  return res.data.booking;
-},
+  nextSession: async () => {
+    const res = await api.get("/me/next-session");
+    return res.data.booking;
+  },
 };
- 
 
 // ────────────────────────────────────────────────────────────
 // Sessions
 // ────────────────────────────────────────────────────────────
 export const sessionService = {
-  getAll: (): Promise<AxiosResponse<TherapySession[]>> =>
-    api.get("/sessions"),
+  getAll: (): Promise<AxiosResponse<TherapySession[]>> => api.get("/sessions"),
 };
 
 // ────────────────────────────────────────────────────────────
@@ -60,26 +61,35 @@ export const bookingService = {
   getAll: (): Promise<AxiosResponse<PaginatedResponse<Booking>>> =>
     api.get("/bookings"),
 
-  getMine: (): Promise<AxiosResponse<Booking[]>> =>
-    api.get("/my-bookings"),
+  getMine: (): Promise<AxiosResponse<Booking[]>> => api.get("/my-bookings"),
 
   getById: (id: number): Promise<AxiosResponse<Booking>> =>
     api.get(`/bookings/${id}`),
 
-  update: (id: number, data: Partial<Booking>): Promise<AxiosResponse<Booking>> =>
-    api.put(`/bookings/${id}`, data),
+  update: (
+    id: number,
+    data: Partial<Booking>,
+  ): Promise<AxiosResponse<Booking>> => api.put(`/bookings/${id}`, data),
 
   cancel: (id: number): Promise<AxiosResponse<{ message: string }>> =>
     api.delete(`/bookings/${id}`),
-  getOne: (id: number): Promise<AxiosResponse<Booking>> => api.get(`/admin/bookings/${id}`),
- 
-  
+  getOne: (id: number): Promise<AxiosResponse<Booking>> =>
+    api.get(`/admin/bookings/${id}`),
 };
- 
+
 // services/api.ts
 export const consultationService = {
   my: () => api.get("/consultations/my"),
   create: (data: any) => api.post("/consultations", data),
-   
+
   delete: (id: number) => api.delete(`/consultations/${id}`),
+};
+//users
+export const userService = {
+  getOne: (id: number): Promise<AxiosResponse<User>> => api.get(`/users/${id}`),
+  getAll: (): Promise<AxiosResponse<User[]>> => api.get("/users"),
+};
+//stats
+export const statsService = {
+  getStats: (): Promise<AxiosResponse<any>> => api.get("/stats"),
 };
